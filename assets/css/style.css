@@ -1,0 +1,1054 @@
+/* ------------------- Global styles ------------------- */
+
+:root {
+  --seaweed: 66, 68, 57;
+  --laurel: 214, 225, 213;
+  --live: 90, 255, 160;
+  --color-primary: rgb(var(--seaweed));
+  --color-accent: rgb(var(--laurel));
+  --color-accent-2: rgb(var(--laurel), .5);
+  --color-accent-3: rgb(var(--laurel), .24);
+  --color-accent-4: rgb(var(--laurel), .16);
+  --color-accent-5: rgb(var(--laurel), .08);
+  --color-live: rgb(var(--live));
+  --color-overlay: rgb(0, 0, 0, .6)
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  overscroll-behavior: none
+}
+
+*::-webkit-scrollbar {
+  display: none
+}
+
+[hidden] {
+  display: none !important
+}
+
+html,
+body {
+  height: 100%
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--color-primary);
+  color: var(--color-accent);
+  font-family: -apple-system, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.6
+}
+
+::selection {
+  background: var(--color-accent-2);
+  color: var(--color-primary)
+}
+
+:focus-visible {
+  outline: 1px solid var(--color-accent);
+  outline-offset: 2px
+}
+
+:focus:not(:focus-visible) {
+  outline: none
+}
+
+/* ------------------- Typography ------------------- */
+
+h2,
+h3,
+b {
+  font-weight: 350
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color .3s cubic-bezier(.645, .045, .355, 1)
+}
+
+a:not(.button):hover,
+.link:hover {
+  color: var(--color-accent-2)
+}
+
+a[exclude]::after {
+  content: "↗";
+  margin: 0 .2em
+}
+
+ul,
+ol {
+  list-style: none
+}
+
+ol {
+  counter-reset: list-counter
+}
+
+ol li {
+  counter-increment: list-counter
+}
+
+ol li::before {
+  content: counter(list-counter)". "
+}
+
+hr {
+  height: 1px;
+  border: 0;
+  background: var(--color-accent-2)
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed
+}
+
+th,
+td {
+  padding: .7em 0;
+  border-top: 1px solid var(--color-accent-2);
+  font-weight: 300;
+  font-variant-numeric: tabular-nums;
+  text-align: left
+}
+
+th {
+  color: var(--color-accent-2)
+}
+
+table > :first-child > tr:first-child > * {
+  padding-top: 0;
+  border-top: 0
+}
+
+table > :last-child > tr:last-child > * {
+  padding-bottom: 0
+}
+
+td:last-child,
+.years th:not(:first-child),
+.years td:not(:first-child) {
+  text-align: right
+}
+
+.years th:first-child {
+  width: 16%
+}
+
+.years th:last-child {
+  width: 28%
+}
+
+.years td:first-child {
+  color: var(--color-accent-2)
+}
+
+/* ------------------- Headers and footers ------------------- */
+
+header,
+footer {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 0 16px
+}
+
+header {
+  z-index: 10;
+  height: 48px;
+  border-bottom: 1px solid var(--color-accent)
+}
+
+footer {
+  height: 40px;
+  border-top: 1px solid var(--color-accent)
+}
+
+header nav ul,
+footer nav ul {
+  display: flex;
+  align-items: center;
+  white-space: nowrap
+}
+
+header nav li:not(:last-of-type)::after {
+  content: "•";
+  margin: 0 .4em
+}
+
+footer nav ul {
+  gap: 16px
+}
+
+header > div {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  min-width: 0
+}
+
+/* ------------------- Buttons ------------------- */
+
+button {
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  appearance: none;
+  cursor: pointer
+}
+
+.button,
+input[type="search"] {
+  display: inline-flex;
+  flex: 0 1 220px;
+  align-items: center;
+  gap: 8px;
+  width: 220px;
+  min-width: 0;
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid var(--color-accent);
+  background: none;
+  color: var(--color-accent);
+  font: inherit;
+  line-height: 1;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .2s cubic-bezier(.645, .045, .355, 1), color .2s cubic-bezier(.645, .045, .355, 1)
+}
+
+.button:hover:not(:disabled) {
+  background: var(--color-accent);
+  color: var(--color-primary)
+}
+
+.button:active:not(:disabled) {
+  background: var(--color-accent-2);
+  color: var(--color-primary)
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: .35
+}
+
+.button.compact {
+  flex: none;
+  width: auto
+}
+
+.close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--color-accent-2);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color .2s cubic-bezier(.645, .045, .355, 1), color .2s cubic-bezier(.645, .045, .355, 1)
+}
+
+.close:hover {
+  background: var(--color-accent-5);
+  color: var(--color-accent)
+}
+
+.close:active {
+  background: var(--color-accent-4)
+}
+
+.link {
+  cursor: pointer;
+  transition: color .3s cubic-bezier(.645, .045, .355, 1)
+}
+
+/* ------------------- Search ------------------- */
+
+input[type="search"] {
+  outline: none;
+  appearance: none;
+  cursor: text
+}
+
+input[type="search"]::placeholder {
+  color: var(--color-accent-2);
+  opacity: 1
+}
+
+input[type="search"]::-webkit-search-cancel-button {
+  width: 10px;
+  height: 10px;
+  background:
+    linear-gradient(45deg, transparent 45%, var(--color-accent) 45%, var(--color-accent) 55%, transparent 55%),
+    linear-gradient(-45deg, transparent 45%, var(--color-accent) 45%, var(--color-accent) 55%, transparent 55%);
+  -webkit-appearance: none;
+  cursor: pointer;
+  opacity: .6
+}
+
+input[type="search"]::-webkit-search-cancel-button:hover {
+  opacity: 1
+}
+
+/* ------------------- Panels ------------------- */
+
+.panel {
+  border: 1px solid var(--color-accent);
+  border-top-width: 2px;
+  background: var(--color-primary)
+}
+
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border: 1px solid var(--color-accent-2);
+  color: var(--color-accent-2);
+  font-size: 11px;
+  line-height: 1.25;
+  white-space: nowrap
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-accent-2);
+  font-size: 12px;
+  white-space: nowrap
+}
+
+.status::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent-2)
+}
+
+.status.live {
+  color: var(--color-accent)
+}
+
+.status.live::before {
+  background: var(--color-live)
+}
+
+/* ------------------- Dropdowns ------------------- */
+
+.dropdown {
+  position: relative;
+  flex: 0 1 220px;
+  min-width: 0
+}
+
+.dropdown .button {
+  justify-content: space-between;
+  width: 100%
+}
+
+.dropdown .button span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+.dropdown svg {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+  transition: transform .2s cubic-bezier(.645, .045, .355, 1)
+}
+
+.dropdown:has(.panel:not([hidden])) .button {
+  background: var(--color-accent-4);
+  color: var(--color-accent)
+}
+
+.dropdown:has(.panel:not([hidden])) .button:hover {
+  background: var(--color-accent);
+  color: var(--color-primary)
+}
+
+.dropdown:has(.panel:not([hidden])) svg {
+  transform: rotate(180deg)
+}
+
+.dropdown .panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  width: max-content;
+  min-width: 100%;
+  max-width: 320px
+}
+
+.actions {
+  display: flex;
+  gap: 16px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-accent-2)
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 0
+}
+
+.item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 12px;
+  color: var(--color-accent-2);
+  line-height: 1.25;
+  cursor: pointer;
+  transition: background-color .2s cubic-bezier(.645, .045, .355, 1), color .2s cubic-bezier(.645, .045, .355, 1)
+}
+
+.item:hover {
+  background: var(--color-accent-5);
+  color: var(--color-accent)
+}
+
+.item.selected {
+  background: var(--color-accent-4);
+  color: var(--color-accent)
+}
+
+.item.selected:hover {
+  background: var(--color-accent-3)
+}
+
+.item:has(input:focus-visible) {
+  outline: 1px solid var(--color-accent);
+  outline-offset: -2px
+}
+
+.item input {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0
+}
+
+/* ------------------- Timeline ------------------- */
+
+main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0
+}
+
+#viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  cursor: grab
+}
+
+#viewport.dragging {
+  cursor: grabbing
+}
+
+#viewport.over-dot {
+  cursor: pointer
+}
+
+#surface,
+#plot {
+  position: relative
+}
+
+#overview,
+#axis {
+  position: sticky;
+  z-index: 2;
+  background: var(--color-primary)
+}
+
+#overview {
+  top: 0;
+  height: 72px;
+  border-bottom: 1px solid var(--color-accent-2)
+}
+
+#axis {
+  bottom: 0;
+  height: 40px;
+  border-top: 1px solid var(--color-accent-2)
+}
+
+canvas {
+  display: block
+}
+
+#overview-canvas,
+#axis-canvas,
+#plot-canvas {
+  position: sticky;
+  left: 0
+}
+
+#plot-canvas {
+  top: 72px
+}
+
+#bands {
+  position: absolute;
+  inset: 0;
+  pointer-events: none
+}
+
+.band {
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+  width: 100%
+}
+
+.band span {
+  position: sticky;
+  left: 12px
+}
+
+#dot-highlight {
+  position: fixed;
+  z-index: 50;
+  display: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin: -4px 0 0 -4px;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 4px var(--color-accent-3);
+  pointer-events: none;
+  animation: pulse 1.1s ease-in-out infinite
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1) }
+  50% { transform: scale(1.7) }
+}
+
+/* ------------------- Views ------------------- */
+
+.view {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0
+}
+
+.view canvas {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  cursor: crosshair
+}
+
+/* ------------------- Placard ------------------- */
+
+#placard {
+  position: fixed;
+  z-index: 50;
+  display: none;
+  width: 320px;
+  pointer-events: none
+}
+
+#placard .head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--color-accent-2)
+}
+
+#placard .host {
+  flex: none;
+  max-width: 60%;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 350;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+#placard .head .tag {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+
+#placard .facts {
+  display: flex;
+  flex-direction: column;
+  padding: 6px 16px
+}
+
+#placard .fact {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-accent-2)
+}
+
+#placard .fact:last-child {
+  border-bottom: 0
+}
+
+#placard .k {
+  color: var(--color-accent-2)
+}
+
+#placard .v {
+  font-variant-numeric: tabular-nums;
+  text-align: right
+}
+
+#placard .k i {
+  display: inline-block;
+  width: 16px;
+  height: 2px;
+  margin: 0 10px 0 0;
+  background: var(--color-accent);
+  vertical-align: middle
+}
+
+#placard .k i.rect {
+  width: 10px;
+  height: 10px
+}
+
+#placard .fact.active .k {
+  color: var(--color-accent)
+}
+
+#placard .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 16px 16px
+}
+
+#placard .hint {
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-accent-2);
+  color: var(--color-accent-2);
+  font-size: 12px
+}
+
+/* ------------------- Overlays ------------------- */
+
+.overlay,
+#viewer {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: var(--color-overlay)
+}
+
+.overlay {
+  z-index: 70;
+  align-items: flex-start;
+  padding: 96px 32px;
+  opacity: 0;
+  transition: opacity .3s cubic-bezier(.645, .045, .355, 1)
+}
+
+.overlay.visible {
+  opacity: 1
+}
+
+#about {
+  align-items: center
+}
+
+.overlay > .panel,
+#viewer > .panel {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+  max-height: 100%
+}
+
+.overlay > .panel {
+  width: 720px;
+  transform: translateY(8px);
+  transition: transform .3s cubic-bezier(.645, .045, .355, 1)
+}
+
+.overlay.visible > .panel {
+  transform: none
+}
+
+.bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--color-accent-2)
+}
+
+.bar > div {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0
+}
+
+.bar h2 {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap
+}
+
+.body {
+  padding: 1.1em 16px 1.4em 16px;
+  overflow: auto
+}
+
+.body h1 {
+  margin: 0 0 .3em 0;
+  font-size: 3em;
+  font-weight: 350;
+  line-height: 1.1
+}
+
+.body h1::before {
+  content: attr(data-heading);
+  display: block;
+  margin: 0 0 .8em 0;
+  font-size: 14px;
+  font-weight: 300
+}
+
+.body h1:not([data-heading])::before {
+  display: none
+}
+
+.body p {
+  margin: 0 0 .8em 0
+}
+
+.body p:last-child {
+  margin: 0
+}
+
+.body section {
+  margin-top: 1.1em
+}
+
+.body h3 {
+  margin: .5em 0 0 0;
+  padding: .8em 0 .6em 0;
+  border-top: 1px solid var(--color-accent-2);
+  font-size: 1.4em
+}
+
+.body p.note {
+  margin: .8em 0 0 0;
+  color: var(--color-accent-2);
+  font-size: 12px
+}
+
+/* ------------------- About ------------------- */
+
+.key,
+.body ol {
+  display: flex;
+  flex-direction: column;
+  gap: .4em
+}
+
+.key li,
+.body ol li {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: center;
+  gap: 1em
+}
+
+.body ol li {
+  grid-template-columns: auto 1fr;
+  gap: .4em
+}
+
+.body ol li::before {
+  color: var(--color-accent-2);
+  font-variant-numeric: tabular-nums
+}
+
+.key svg {
+  width: 40px;
+  height: 16px;
+  overflow: visible
+}
+
+.key .line {
+  stroke: rgb(var(--laurel), .45);
+  stroke-width: 11;
+  stroke-linecap: round
+}
+
+.key .ring {
+  fill: var(--color-primary)
+}
+
+.key .point {
+  fill: var(--color-accent)
+}
+
+.key .live {
+  fill: var(--color-live)
+}
+
+/* ------------------- Report ------------------- */
+
+.empty {
+  color: var(--color-accent-2)
+}
+
+/* ------------------- Viewer ------------------- */
+
+#viewer {
+  z-index: 60
+}
+
+#viewer > .panel {
+  width: 85vw;
+  height: 80vh
+}
+
+#viewer .bar > div {
+  align-items: center
+}
+
+#viewer .bar > div:last-child {
+  flex: none;
+  gap: 8px
+}
+
+#viewer-date,
+#viewer-count {
+  color: var(--color-accent-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap
+}
+
+#viewer-count {
+  padding: 0 8px 0 0
+}
+
+#viewer .close {
+  margin-left: 8px
+}
+
+#viewer .body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  padding: 0
+}
+
+#viewer-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #fff
+}
+
+#viewer-status {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--color-primary);
+  color: var(--color-accent-2);
+  font-size: 12px;
+  text-align: center;
+  pointer-events: none
+}
+
+/* ------------------- Shortcuts ------------------- */
+
+#shortcuts {
+  position: relative
+}
+
+#shortcuts:hover .link,
+#shortcuts:focus-within .link {
+  color: var(--color-accent-2)
+}
+
+#shortcuts-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 9px);
+  z-index: 50;
+  display: none;
+  width: 320px;
+  padding: 6px 16px;
+  cursor: default
+}
+
+#shortcuts:hover #shortcuts-panel,
+#shortcuts:focus-within #shortcuts-panel {
+  display: block
+}
+
+.row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-accent-2)
+}
+
+.row:last-child {
+  border-bottom: 0
+}
+
+.row b {
+  white-space: nowrap
+}
+
+.row span {
+  color: var(--color-accent-2);
+  text-align: right
+}
+
+/* ------------------- Drop hint ------------------- */
+
+#drop-hint {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: 1px dashed var(--color-accent);
+  outline-offset: -16px;
+  background: var(--color-overlay);
+  pointer-events: none
+}
+
+#drop-hint span {
+  font-size: 16px
+}
+
+/* ------------------- Exhibition mode ------------------- */
+
+body.exhibition header,
+body.exhibition footer {
+  display: none
+}
+
+/* ------------------- Mobile notice ------------------- */
+
+#mobile-notice {
+  display: none
+}
+
+@media screen and (max-width: 1100px) {
+
+  /* ------------------- Headers and footers ------------------- */
+
+  header,
+  header > div {
+    gap: 12px
+  }
+
+  header .button,
+  header .dropdown,
+  header input[type="search"] {
+    flex-basis: 180px
+  }
+}
+
+@media screen and (max-height: 800px) {
+
+  /* ------------------- Overlays ------------------- */
+
+  .overlay {
+    padding: 32px
+  }
+}
+
+@media screen and (max-width: 768px) {
+
+  /* ------------------- Mobile notice ------------------- */
+
+  body > *:not(#mobile-notice) {
+    display: none !important
+  }
+
+  #mobile-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 32px;
+    font-size: 16px;
+    text-align: center
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    transition-duration: 1ms !important
+  }
+}

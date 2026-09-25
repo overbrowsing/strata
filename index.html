@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Strata • Overbrowsing</title>
+  <meta name="description" content="Exploring the web of yesterday, today and tomorrow.">
+  <meta property="og:title" content="Overbrowsing">
+  <meta property="og:description" content="Exploring the web of yesterday, today and tomorrow.">
+  <meta property="og:image" content="https://overbrowsing.com/assets/media/card.webp">
+  <meta property="og:url" content="https://overbrowsing.com">
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+
+<body>
+  <div id="mobile-notice">
+    <p>Strata is a desktop experience.<br>Please open this page on a larger screen.</p>
+  </div>
+
+  <header>
+    <nav>
+      <ul>
+        <li><a href="https://overbrowsing.com">Overbrowsing</a></li>
+        <li>Strata</li>
+      </ul>
+    </nav>
+    <div>
+      <select id="sort" hidden>
+        <option value="date">Sort: Chronological</option>
+        <option value="life">Sort: Lifespan</option>
+        <option value="captures">Sort: Captures</option>
+        <option value="archive">Sort: Web Archive</option>
+      </select>
+      <div class="dropdown" id="view">
+        <button class="button" id="view-trigger" type="button"><span>View: Timeline (chronological)</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4h2v12.17l5.59-5.58L20 12l-8 8-8-8 1.41-1.41L11 16.17z" /></svg></button>
+        <div class="panel" id="view-panel" hidden>
+          <div class="list">
+            <label class="item selected"><input type="radio" name="view" value="timeline-date" checked><span>Timeline (chronological)</span></label>
+            <label class="item"><input type="radio" name="view" value="timeline-life"><span>Timeline (lifespan)</span></label>
+            <label class="item"><input type="radio" name="view" value="timeline-captures"><span>Timeline (captures)</span></label>
+            <label class="item"><input type="radio" name="view" value="timeline-archive"><span>Timeline (web archive)</span></label>
+            <label class="item"><input type="radio" name="view" value="survival"><span>Survival curves (Kaplan-Meier)</span></label>
+            <label class="item"><input type="radio" name="view" value="ridgeline"><span>Era ridgeline</span></label>
+            <label class="item"><input type="radio" name="view" value="growth"><span>Born vs died</span></label>
+            <label class="item"><input type="radio" name="view" value="agepyramid"><span>Age pyramid</span></label>
+          </div>
+        </div>
+      </div>
+      <div class="dropdown" id="archives">
+        <button class="button" id="archives-trigger" type="button"><span>Archives: All</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4h2v12.17l5.59-5.58L20 12l-8 8-8-8 1.41-1.41L11 16.17z" /></svg></button>
+        <div class="panel" id="archives-panel" hidden>
+          <div class="actions">
+            <button class="link" id="archives-all" type="button">All</button>
+            <button class="link" id="archives-none" type="button">None</button>
+          </div>
+          <div class="list" id="archives-list"></div>
+        </div>
+      </div>
+      <input id="search" type="search" placeholder="Search" aria-label="Search URLs">
+      <button class="button" id="upload" type="button" title="Choose Pluto's results folder, or drop it anywhere on the page">Upload data</button>
+      <input id="folder-input" type="file" webkitdirectory directory multiple hidden>
+    </div>
+  </header>
+
+  <main>
+    <div id="viewport">
+      <div id="surface">
+        <div id="overview"><canvas id="overview-canvas"></canvas></div>
+        <div id="plot">
+          <canvas id="plot-canvas"></canvas>
+          <div id="bands"></div>
+        </div>
+        <div id="axis"><canvas id="axis-canvas"></canvas></div>
+      </div>
+    </div>
+    <section class="view" id="ridgeline" hidden>
+      <canvas id="ridgeline-canvas"></canvas>
+    </section>
+    <section class="view" id="growth" hidden>
+      <canvas id="growth-canvas"></canvas>
+    </section>
+    <section class="view" id="survival" hidden>
+      <canvas id="survival-canvas"></canvas>
+    </section>
+    <section class="view" id="age" hidden>
+      <canvas id="age-canvas"></canvas>
+    </section>
+  </main>
+
+  <div class="panel" id="placard"></div>
+  <div id="dot-highlight"></div>
+  <div id="drop-hint" hidden><span>Drop Pluto's results folder to load it</span></div>
+
+  <div class="overlay" id="about" hidden>
+    <div class="panel">
+      <div class="bar">
+        <h2>About</h2>
+        <button class="close" id="about-close" type="button" title="Close (Esc)" aria-label="Close">✕</button>
+      </div>
+      <div class="body">
+        <div class="intro">
+          <h1>Welcome to Strata</h1>
+          <p>Strata is a web app for visualising the history of websites as recorded by web archives. Using data gathered by <a href="https://github.com/overbrowsing/pluto" target="_blank" rel="noopener" exclude>Pluto</a>, it draws every URL as a layer on a shared timeline, from its first archived capture to its last, revealing when pages appeared, how long they lasted and what survives today. Zoom from decades down to a single capture and open it as it was, in the archive that holds it.</p>
+        </div>
+        <section>
+          <h3>Reading the timeline</h3>
+          <ul class="key">
+            <li><svg viewBox="0 0 40 16" aria-hidden="true"><line class="line" x1="6" y1="8" x2="34" y2="8" /></svg><span>A URL. Line brightness corresponds to capture frequency</span></li>
+            <li><svg viewBox="0 0 40 16" aria-hidden="true"><line class="line" x1="6" y1="8" x2="34" y2="8" /><circle class="ring" cx="20" cy="8" r="5" /><circle class="point" cx="20" cy="8" r="4" /></svg><span>A capture. Zoom in and click one to open it</span></li>
+            <li><svg viewBox="0 0 40 16" aria-hidden="true"><circle class="live" cx="20" cy="8" r="4" /></svg><span>Still live on the web today</span></li>
+          </ul>
+        </section>
+        <section>
+          <h3>Use your own data</h3>
+          <ol>
+            <li><span>Run <a href="https://github.com/overbrowsing/pluto" target="_blank" rel="noopener" exclude>Pluto</a> on the URLs you want to explore</span></li>
+            <li><span>Click <b>Upload Data</b> and choose its results folder, or drag it onto the page</span></li>
+          </ol>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="report" hidden>
+    <div class="panel">
+      <div class="bar">
+        <h2>Report</h2>
+        <button class="close" id="report-close" type="button" title="Close (Esc)" aria-label="Close">✕</button>
+      </div>
+      <div class="body" id="report-body"></div>
+    </div>
+  </div>
+
+  <div id="viewer" hidden>
+    <div class="panel">
+      <div class="bar">
+        <div>
+          <h2 id="viewer-host"></h2>
+          <span class="tag" id="viewer-archive"></span>
+          <span id="viewer-date"></span>
+        </div>
+        <div>
+          <span id="viewer-count"></span>
+          <button class="button compact" id="viewer-prev" type="button" title="Previous capture (←)">← Prev</button>
+          <button class="button compact" id="viewer-next" type="button" title="Next capture (→)">Next →</button>
+          <a class="button compact" id="viewer-external" target="_blank" rel="noopener">Open in new tab ↗</a>
+          <button class="close" id="viewer-close" type="button" title="Close (Esc)" aria-label="Close">✕</button>
+        </div>
+      </div>
+      <div class="body">
+        <iframe id="viewer-frame" title="Archived capture" referrerpolicy="no-referrer"></iframe>
+        <div id="viewer-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <span>© Overbrowsing <span id="year"></span></span>
+    <nav>
+      <ul>
+        <li><button class="link" id="about-trigger" type="button">About</button></li>
+        <li><button class="link" id="report-trigger" type="button">Report</button></li>
+        <li id="shortcuts">
+          <span class="link" tabindex="0">Controls</span>
+          <div class="panel" id="shortcuts-panel"></div>
+        </li>
+      </ul>
+    </nav>
+  </footer>
+
+  <script src="assets/js/app.js"></script>
+</body>
+
+</html>
