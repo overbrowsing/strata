@@ -6,7 +6,7 @@
 
    1. Run [Pluto](https://github.com/overbrowsing/pluto) on the URL(s) you want to analyse
 
-   2. Open Strata ([https://overbrowsing.com/strata](https://overbrowsing.com/strata))
+   2. Open *Strata* ([https://overbrowsing.com/strata](https://overbrowsing.com/strata))
 
    3. Click **Upload Data** and choose the folder Pluto saved your results to (`output/` by default, or wherever you pointed `--output`)
 
