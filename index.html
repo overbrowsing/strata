@@ -24,18 +24,18 @@
     <div>
       <select id="sort" hidden>
         <option value="date">Sort: Chronological</option>
+        <option value="nested">Sort: Nested</option>
         <option value="life">Sort: Lifespan</option>
         <option value="captures">Sort: Captures</option>
-        <option value="archive">Sort: Web Archive</option>
       </select>
       <div class="dropdown" id="view">
         <button class="button" id="view-trigger" type="button"><span>View: Timeline (chronological)</span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4h2v12.17l5.59-5.58L20 12l-8 8-8-8 1.41-1.41L11 16.17z" /></svg></button>
         <div class="panel" id="view-panel" hidden>
           <div class="list">
             <label class="item selected"><input type="radio" name="view" value="timeline-date" checked><span>Timeline (chronological)</span></label>
+            <label class="item"><input type="radio" name="view" value="timeline-nested"><span>Timeline (nested)</span></label>
             <label class="item"><input type="radio" name="view" value="timeline-life"><span>Timeline (lifespan)</span></label>
             <label class="item"><input type="radio" name="view" value="timeline-captures"><span>Timeline (captures)</span></label>
-            <label class="item"><input type="radio" name="view" value="timeline-archive"><span>Timeline (web archive)</span></label>
             <label class="item"><input type="radio" name="view" value="survival"><span>Survival curves (Kaplan-Meier)</span></label>
             <label class="item"><input type="radio" name="view" value="ridgeline"><span>Era ridgeline</span></label>
             <label class="item"><input type="radio" name="view" value="growth"><span>Born vs died</span></label>
@@ -49,6 +49,10 @@
           <div class="actions">
             <button class="link" id="archives-all" type="button">All</button>
             <button class="link" id="archives-none" type="button">None</button>
+            <span class="layout">
+              <button class="link" id="archives-merged" type="button" aria-pressed="true">Merged</button>
+              <button class="link" id="archives-separate" type="button" aria-pressed="false">Separate</button>
+            </span>
           </div>
           <div class="list" id="archives-list"></div>
         </div>
