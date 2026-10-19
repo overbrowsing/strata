@@ -856,10 +856,12 @@ canvas {
   fill: var(--color-accent)
 }
 
+.key .segment {
+  fill: rgb(var(--laurel), .45)
+}
+
 .key .extend {
-  stroke: rgb(var(--live), .4);
-  stroke-width: 5.5;
-  stroke-linecap: round
+  fill: rgb(var(--live), .4)
 }
 
 /* ------------------- Report ------------------- */
