@@ -260,9 +260,9 @@ const TOP_ERAS = ERAS.filter(era => era.zoom === 0)
 
 const VIEW_LABELS = {
   "timeline-date": "View: Timeline (Chronological)",
+  "timeline-nested": "View: Timeline (Nested)",
   "timeline-life": "View: Timeline (Lifespan)",
   "timeline-captures": "View: Timeline (Captures)",
-  "timeline-archive": "View: Timeline (Web Archive)",
   ridgeline: "View: Era Ridgeline",
   growth: "View: Growth: Born vs Died",
   survival: "View: Survival Curves (Kaplan-Meier)",
@@ -330,6 +330,8 @@ const archivesPanel = $("archives-panel");
 const archivesList = $("archives-list");
 const archivesAll = $("archives-all");
 const archivesNone = $("archives-none");
+const archivesMerged = $("archives-merged");
+const archivesSplit = $("archives-separate");
 
 const scopesDropdown = $("scopes");
 const scopesTrigger = $("scopes-trigger");
@@ -392,6 +394,7 @@ let rowHeight = 6;
 let plotFullHeight = 0;
 let labelReserve = 60;
 let erasVisible = true;
+let archivesSeparate = false;
 let liveExtended = true;
 let collectedMs = 0;
 
@@ -1283,6 +1286,7 @@ const listDataFiles = async dir => {
 let ingestId = 0;
 let pendingData = null;
 let mementoStore = null;
+let mergedIndex = new Map();
 
 const setLoading = label => {
   searchInput.placeholder = label ? `${label}…` : "Search";
@@ -1384,6 +1388,7 @@ const setData = ({ list, store, histogram, collectedMs: collected }) => {
 
   stopIntro();
   mergedHosts = mergeByHost(hosts);
+  mergedIndex = new Map(mergedHosts.map(host => [host.host, host]));
   classifyScopes(mergedHosts);
   fullStart = Infinity;
   fullEnd = -Infinity;
@@ -1692,10 +1697,6 @@ const SORT_KEYS = {
   date: () => h => h.firstMs,
   life: () => h => h.firstMs - h.lastMs,
   captures: () => h => -h.captures,
-  archive: () => {
-    const rank = new Map(allArchives.map((name, i) => [name, i]));
-    return h => rank.get(h.archive) * 1e13 + h.firstMs;
-  },
 };
 
 const sortByKey = (items, key) => {
@@ -1716,14 +1717,89 @@ const inSelectedArchives = host => {
 };
 
 const sortedCache = new Map();
+let nestedParents = new Map();
+
+const nestedOrder = (list, parents) => {
+  const byDate = sortByKey(list, host => host.firstMs);
+  const keys = new Map();
+  const byKey = new Map();
+  for (const host of byDate) {
+    const { hostname, path } = splitURL(host.host);
+    const clean = path.replace(/[?#].*$/, "").replace(/\/+$/, "");
+    keys.set(host, { hostname, clean });
+    if (!byKey.has(hostname + clean)) byKey.set(hostname + clean, host);
+  }
+
+  const parentOf = host => {
+    const { hostname, clean } = keys.get(host);
+    const same = byKey.get(hostname + clean);
+    if (same !== host) return same;
+    for (let path = clean; path;) {
+      path = path.slice(0, path.lastIndexOf("/"));
+      const parent = byKey.get(hostname + path);
+      if (parent) return parent;
+    }
+    const labels = hostname.split(".");
+    for (let i = 1; i <= labels.length - 2; i++) {
+      const parent = byKey.get(labels.slice(i).join("."));
+      if (parent) return parent;
+    }
+    return null;
+  };
+
+  const children = new Map();
+  const roots = [];
+  for (const host of byDate) {
+    const parent = parentOf(host);
+    if (!parent) {
+      roots.push(host);
+      continue;
+    }
+    parents.set(host, parent);
+    if (!children.has(parent)) children.set(parent, []);
+    children.get(parent).push(host);
+  }
+
+  const order = [];
+  const stack = roots.reverse();
+  while (stack.length) {
+    const host = stack.pop();
+    order.push(host);
+    const kids = children.get(host);
+    if (kids) for (let i = kids.length - 1; i >= 0; i--) stack.push(kids[i]);
+  }
+  return order;
+};
+
+const orderBy = (mode, list, parents) =>
+  mode === "nested"
+    ? nestedOrder(list, parents)
+    : sortByKey(list, SORT_KEYS[mode]());
 
 const sortedSource = () => {
-  const mode = SORT_KEYS[sortSelect.value] ? sortSelect.value : "date";
-  if (!sortedCache.has(mode)) {
-    const source = mode === "archive" ? hosts : mergedHosts;
-    sortedCache.set(mode, sortByKey(source, SORT_KEYS[mode]()));
+  const mode =
+    sortSelect.value === "nested" || SORT_KEYS[sortSelect.value]
+      ? sortSelect.value
+      : "date";
+  const separate = archivesSeparate && viewMode.startsWith("timeline-");
+  const key = `${mode}|${separate}`;
+  if (!sortedCache.has(key)) {
+    const parents = new Map();
+    let order;
+    if (separate) {
+      const groups = new Map(allArchives.map(name => [name, []]));
+      for (const host of hosts) groups.get(host.archive)?.push(host);
+      order = [...groups.values()].flatMap(group =>
+        orderBy(mode, group, parents)
+      );
+    } else {
+      order = orderBy(mode, mergedHosts, parents);
+    }
+    sortedCache.set(key, { order, parents });
   }
-  return sortedCache.get(mode);
+  const entry = sortedCache.get(key);
+  nestedParents = entry.parents;
+  return entry.order;
 };
 
 const computeVisible = () => {
@@ -1793,7 +1869,7 @@ viewPanel.addEventListener("change", e => {
 
 const buildRowPlan = () => {
   const rows = [];
-  const grouped = sortSelect.value === "archive";
+  const grouped = archivesSeparate;
   visible.forEach((host, i) => {
     let row = host.row;
     if (!row) {
@@ -2535,6 +2611,8 @@ const resetView = () => {
   placard.style.display = "none";
   setAllArchives(true);
   setAllScopes();
+  archivesSeparate = false;
+  syncArchiveLayout();
   setViewMode("timeline-date");
   fitInitialScale();
   layout();
@@ -2735,6 +2813,7 @@ const showHostPlacard = (host, clientX, clientY) => {
       ${fact("Lifespan", formatSpan(host.lastMs - host.firstMs))}
       ${host.live && collectedMs ? fact("Live at", prettyDate(collectedMs)) : ""}
       ${fact("Captures", host.captures.toLocaleString())}
+      ${viewMode === "timeline-nested" && nestedParents.has(host) ? fact("Within", esc(nestedParents.get(host).host)) : ""}
     </div>
     <div class="tags">${(host.archives || [host.archive]).map(archiveTag).join("")}</div>`,
     clientX,
@@ -2860,13 +2939,28 @@ const selectArchives = names => {
 const updateArchiveFilterLabel = () => {
   const count = selectedArchives.size;
   const total = allArchives.length;
-  archivesLabel.textContent =
-    count === total
-      ? "Archives: All"
-      : count === 0
-        ? "Archives: None"
-        : `Archives: ${count}/${total}`;
+  const chosen =
+    count === total ? "All" : count === 0 ? "None" : `${count}/${total}`;
+  archivesLabel.textContent = `Archives: ${chosen}${archivesSeparate ? " (separate)" : ""}`;
 };
+
+const syncArchiveLayout = () => {
+  archivesMerged.setAttribute("aria-pressed", String(!archivesSeparate));
+  archivesSplit.setAttribute("aria-pressed", String(archivesSeparate));
+  updateArchiveFilterLabel();
+};
+
+const setArchiveLayout = separate => {
+  if (archivesSeparate === separate) return;
+  archivesSeparate = separate;
+  syncArchiveLayout();
+  computeVisible();
+  rowHeight = fitRowHeight(visible.length);
+  refresh();
+};
+
+archivesMerged.addEventListener("click", () => setArchiveLayout(false));
+archivesSplit.addEventListener("click", () => setArchiveLayout(true));
 
 archivesList.addEventListener("change", e => {
   const checkbox = e.target;
@@ -3065,7 +3159,9 @@ const reportTable = years => {
 };
 
 const renderReport = () => {
-  const data = visible;
+  const data = archivesSeparate
+    ? [...new Set(visible.map(host => mergedIndex.get(host.host)))]
+    : visible;
   if (!data.length) {
     reportBody.innerHTML = `<p class="empty">No URLs match the current filters. Clear a filter or search to see a report.</p>`;
     return;
