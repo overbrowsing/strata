@@ -1,6 +1,9 @@
 /* ------------------- Hyparquet ------------------- */
 
+function hyparquetLibrary() {
 var hyparquet=(()=>{var Le=Object.defineProperty;var en=Object.getOwnPropertyDescriptor;var tn=Object.getOwnPropertyNames;var nn=Object.prototype.hasOwnProperty;var rn=(e,t)=>{for(var r in t)Le(e,r,{get:t[r],enumerable:!0})},on=(e,t,r,n)=>{if(t&&typeof t=="object"||typeof t=="function")for(let i of tn(t))!nn.call(e,i)&&i!==r&&Le(e,i,{get:()=>t[i],enumerable:!(n=en(t,i))||n.enumerable});return e};var fn=e=>on(Le({},"__esModule",{value:!0}),e);var Wn={};rn(Wn,{parquetMetadata:()=>re,parquetMetadataAsync:()=>G,parquetRead:()=>Re,parquetReadObjects:()=>tt,parquetSchema:()=>R});var Be=["BOOLEAN","INT32","INT64","INT96","FLOAT","DOUBLE","BYTE_ARRAY","FIXED_LEN_BYTE_ARRAY"],O=["PLAIN","GROUP_VAR_INT","PLAIN_DICTIONARY","RLE","BIT_PACKED","DELTA_BINARY_PACKED","DELTA_LENGTH_BYTE_ARRAY","DELTA_BYTE_ARRAY","RLE_DICTIONARY","BYTE_STREAM_SPLIT"],ot=["REQUIRED","OPTIONAL","REPEATED"],ft=["UTF8","MAP","MAP_KEY_VALUE","LIST","ENUM","DECIMAL","DATE","TIME_MILLIS","TIME_MICROS","TIMESTAMP_MILLIS","TIMESTAMP_MICROS","UINT_8","UINT_16","UINT_32","UINT_64","INT_8","INT_16","INT_32","INT_64","JSON","BSON","INTERVAL"],st=["UNCOMPRESSED","SNAPPY","GZIP","LZO","BROTLI","LZ4","ZSTD","LZ4_RAW"],de=["DATA_PAGE","INDEX_PAGE","DICTIONARY_PAGE","DATA_PAGE_V2"],at=["UNORDERED","ASCENDING","DESCENDING"],lt=["SPHERICAL","VINCENTY","THOMAS","ANDOYER","KARNEY"];function me(e){let t=pe(e);if(t.type===1)return{type:"Point",coordinates:Se(e,t)};if(t.type===2)return{type:"LineString",coordinates:Ne(e,t)};if(t.type===3)return{type:"Polygon",coordinates:ct(e,t)};if(t.type===4){let r=[];for(let n=0;n<t.count;n++)r.push(Se(e,pe(e)));return{type:"MultiPoint",coordinates:r}}else if(t.type===5){let r=[];for(let n=0;n<t.count;n++)r.push(Ne(e,pe(e)));return{type:"MultiLineString",coordinates:r}}else if(t.type===6){let r=[];for(let n=0;n<t.count;n++)r.push(ct(e,pe(e)));return{type:"MultiPolygon",coordinates:r}}else if(t.type===7){let r=[];for(let n=0;n<t.count;n++)r.push(me(e));return{type:"GeometryCollection",geometries:r}}else throw new Error(`Unsupported geometry type: ${t.type}`)}function pe(e){let{view:t}=e,r=t.getUint8(e.offset++)===1,n=t.getUint32(e.offset,r);e.offset+=4;let i=n%1e3,o=Math.floor(n/1e3),f=0;i>1&&i<=7&&(f=t.getUint32(e.offset,r),e.offset+=4);let s=2;return o&&s++,o===3&&s++,{littleEndian:r,type:i,dim:s,count:f}}function Se(e,t){let r=[];for(let n=0;n<t.dim;n++){let i=e.view.getFloat64(e.offset,t.littleEndian);e.offset+=8,r.push(i)}return r}function Ne(e,t){let r=[];for(let n=0;n<t.count;n++)r.push(Se(e,t));return r}function ct(e,t){let{view:r}=e,n=[];for(let i=0;i<t.count;i++){let o=r.getUint32(e.offset,t.littleEndian);e.offset+=4,n.push(Ne(e,{...t,count:o}))}return n}var ut=new TextDecoder,M={timestampFromMilliseconds(e){return new Date(Number(e))},timestampFromMicroseconds(e){return new Date(Number(e/1000n))},timestampFromNanoseconds(e){return new Date(Number(e/1000000n))},dateFromDays(e){return new Date(e*864e5)},stringFromBytes(e){return e&&ut.decode(e)},jsonFromBytes(e){return e&&JSON.parse(ut.decode(e))},geometryFromBytes(e){return e&&me({view:new DataView(e.buffer,e.byteOffset,e.byteLength),offset:0})},geographyFromBytes(e){return e&&me({view:new DataView(e.buffer,e.byteOffset,e.byteLength),offset:0})},uuidFromBytes(e){if(!e)return;let t=Array.from(e,r=>r.toString(16).padStart(2,"0")).join("");return t.slice(0,8)+"-"+t.slice(8,12)+"-"+t.slice(12,16)+"-"+t.slice(16,20)+"-"+t.slice(20,32)}};function Pe(e,t,r,n){if(t&&r.endsWith("_DICTIONARY")){let i=e;e instanceof Uint8Array&&!(t instanceof Uint8Array)&&(i=new t.constructor(e.length));for(let o=0;o<e.length;o++)i[o]=t[e[o]];return i}else return Oe(e,n)}function Oe(e,t){let{element:r,parsers:n,utf8:i=!0,schemaPath:o}=t,{type:f,converted_type:s,logical_type:l}=r,d=r.repetition_type!=="REQUIRED";if(o?.some(a=>a.element.logical_type?.type==="VARIANT")&&f==="BYTE_ARRAY"&&s!=="UTF8"&&l?.type!=="STRING")return e;if(s==="DECIMAL"){let u=10**-(r.scale||0),m=new Array(e.length);for(let p=0;p<m.length;p++)e[p]instanceof Uint8Array?m[p]=Me(e[p])*u:m[p]=Number(e[p])*u;return m}if(!s&&f==="INT96")return Array.from(e).map(a=>n.timestampFromNanoseconds(sn(a)));if(s==="DATE")return Array.from(e).map(a=>n.dateFromDays(a));if(s==="TIMESTAMP_MILLIS")return Array.from(e).map(a=>n.timestampFromMilliseconds(a));if(s==="TIMESTAMP_MICROS")return Array.from(e).map(a=>n.timestampFromMicroseconds(a));if(s==="JSON")return e.map(a=>n.jsonFromBytes(a));if(s==="BSON")throw new Error("parquet bson not supported");if(s==="INTERVAL")throw new Error("parquet interval not supported");if(l?.type==="GEOMETRY")return e.map(a=>n.geometryFromBytes(a));if(l?.type==="GEOGRAPHY")return e.map(a=>n.geographyFromBytes(a));if(l?.type==="UUID")return e.map(a=>n.uuidFromBytes(a));if(s==="UTF8"||l?.type==="STRING"||i&&f==="BYTE_ARRAY")return e.map(a=>n.stringFromBytes(a));if(s==="UINT_64"||l?.type==="INTEGER"&&l.bitWidth===64&&!l.isSigned){if(e instanceof BigInt64Array)return new BigUint64Array(e.buffer,e.byteOffset,e.length);let a=d?new Array(e.length):new BigUint64Array(e.length);for(let u=0;u<a.length;u++)a[u]=e[u];return a}if(s==="UINT_32"||l?.type==="INTEGER"&&l.bitWidth===32&&!l.isSigned){if(e instanceof Int32Array)return new Uint32Array(e.buffer,e.byteOffset,e.length);let a=d?new Array(e.length):new Uint32Array(e.length);for(let u=0;u<a.length;u++)a[u]=e[u]<0?4294967296+e[u]:e[u];return a}if(l?.type==="FLOAT16")return Array.from(e).map(Ue);if(l?.type==="TIMESTAMP"){let{unit:a}=l,u=n.timestampFromMilliseconds;a==="MICROS"&&(u=n.timestampFromMicroseconds),a==="NANOS"&&(u=n.timestampFromNanoseconds);let m=new Array(e.length);for(let p=0;p<m.length;p++)m[p]=u(e[p]);return m}return e}function Me(e){if(!e.length)return 0;let t=0n;for(let n of e)t=t*256n+BigInt(n);let r=e.length*8;return t>=2n**BigInt(r-1)&&(t-=2n**BigInt(r)),Number(t)}function sn(e){let t=(e>>64n)-2440588n,r=e&0xffffffffffffffffn;return t*86400000000000n+r}function Ue(e){if(!e)return;let t=e[1]<<8|e[0],r=t>>15?-1:1,n=t>>10&31,i=t&1023;return n===0?r*2**-14*(i/1024):n===31?i?NaN:r*(1/0):r*2**(n-15)*(1+i/1024)}function dt(e,t,r){let n=e[t],i=[],o=1;if(n.num_children)for(;i.length<n.num_children;){let f=e[t+o],s=dt(e,t+o,[...r,f.name]);o+=s.count,i.push(s)}return{count:o,element:n,children:i,path:r}}function _e(e,t){let r=dt(e,0,[]),n=[r];for(let i of t){let o=r.children.find(f=>f.element.name===i);if(!o)throw new Error(`parquet schema element not found: ${t}`);n.push(o),r=o}return n}function he(e){let t=[];function r(n){if(n.children.length)for(let i of n.children)r(i);else t.push(n.path.join("."))}return r(e),t}function De(e){let t=0;for(let{element:r}of e)r.repetition_type==="REPEATED"&&t++;return t}function ne(e){let t=0;for(let{element:r}of e.slice(1))r.repetition_type!=="REQUIRED"&&t++;return t}function pt(e){if(!e||e.element.converted_type!=="LIST"||e.children.length>1)return!1;let t=e.children[0];return!(t.children.length>1||t.element.repetition_type!=="REPEATED")}function mt(e){if(!e||e.element.converted_type!=="MAP"||e.children.length>1)return!1;let t=e.children[0];return!(t.children.length!==2||t.element.repetition_type!=="REPEATED"||t.children.find(i=>i.element.name==="key")?.element.repetition_type==="REPEATED"||t.children.find(i=>i.element.name==="value")?.element.repetition_type==="REPEATED")}function Ce(e){if(e.length!==2)return!1;let[,t]=e;return!(t.element.repetition_type==="REPEATED"||t.children.length)}function N(e){let t={},r=0;for(;e.offset<e.view.byteLength;){let n=e.view.getUint8(e.offset++),i=n&15;if(i===0)break;let o=n>>4;r=o?r+o:_t(e),t[`field_${r}`]=$e(e,i)}return t}function $e(e,t){switch(t){case 1:return!0;case 2:return!1;case 3:return e.view.getInt8(e.offset++);case 4:case 5:return _t(e);case 6:return ge(e);case 7:{let r=e.view.getFloat64(e.offset,!0);return e.offset+=8,r}case 8:{let r=U(e),n=new Uint8Array(e.view.buffer,e.view.byteOffset+e.offset,r);return e.offset+=r,n}case 9:{let r=e.view.getUint8(e.offset++),n=r&15,i=r>>4;i===15&&(i=U(e));let o=n===1||n===2,f=new Array(i);for(let s=0;s<i;s++)f[s]=o?$e(e,3)===1:$e(e,n);return f}case 12:return N(e);default:throw new Error(`thrift unhandled type: ${t}`)}}function U(e){let t=0,r=0;for(;;){let n=e.view.getUint8(e.offset++);if(t|=(n&127)<<r,!(n&128))return t;r+=7}}function an(e){let t=0n,r=0n;for(;;){let n=e.view.getUint8(e.offset++);if(t|=BigInt(n&127)<<r,!(n&128))return t;r+=7n}}function _t(e){let t=U(e);return t>>>1^-(t&1)}function ge(e){let t=an(e);return t>>1n^-(t&1n)}function ht(e,t){let r=new Map,n=t?.find(({key:o})=>o==="geo")?.value,i=(n&&JSON.parse(n)?.columns)??{};for(let[o,f]of Object.entries(i)){if(f.encoding!=="WKB")continue;let s=f.edges==="spherical"?"GEOGRAPHY":"GEOMETRY",l=f.crs?.id??f.crs?.ids?.[0],d=l?`${l.authority}:${l.code.toString()}`:void 0;r.set(o,{type:s,crs:d})}for(let o=1;o<e.length;o++){let{logical_type:f,name:s,num_children:l,type:d}=e[o];if(l){o+=l;continue}d==="BYTE_ARRAY"&&!f&&(e[o].logical_type=r.get(s))}}var ln=1<<19,cn=new TextDecoder;function P(e){return e&&cn.decode(e)}async function G(e,{parsers:t,initialFetchSize:r=ln,geoparquet:n=!0}={}){if(!e||!(e.byteLength>=0))throw new Error("parquet expected AsyncBuffer");let i=Math.max(0,e.byteLength-r),o=await e.slice(i,e.byteLength),f=new DataView(o);if(f.getUint32(o.byteLength-4,!0)!==827474256)throw new Error("parquet file invalid (footer != PAR1)");let s=f.getUint32(o.byteLength-8,!0);if(s>e.byteLength-8)throw new Error(`parquet metadata length ${s} exceeds available buffer ${e.byteLength-8}`);if(s+8>r){let l=e.byteLength-s-8,d=await e.slice(l,i),c=new ArrayBuffer(s+8),a=new Uint8Array(c);return a.set(new Uint8Array(d)),a.set(new Uint8Array(o),i-l),re(c,{parsers:t,geoparquet:n})}else return re(o,{parsers:t,geoparquet:n})}function re(e,{parsers:t,geoparquet:r=!0}={}){if(!(e instanceof ArrayBuffer))throw new Error("parquet expected ArrayBuffer");let n=new DataView(e),i={...M,...t};if(n.byteLength<8)throw new Error("parquet file is too short");if(n.getUint32(n.byteLength-4,!0)!==827474256)throw new Error("parquet file invalid (footer != PAR1)");let o=n.byteLength-8,f=n.getUint32(o,!0);if(f>n.byteLength-8)throw new Error(`parquet metadata length ${f} exceeds available buffer ${n.byteLength-8}`);let s=o-f,d=N({view:n,offset:s}),c=d.field_1,a=d.field_2.map(h=>({type:Be[h.field_1],type_length:h.field_2,repetition_type:ot[h.field_3],name:P(h.field_4),num_children:h.field_5,converted_type:ft[h.field_6],scale:h.field_7,precision:h.field_8,field_id:h.field_9,logical_type:un(h.field_10)})),u=a.filter(h=>h.type),m=d.field_3,p=d.field_4.map(h=>({columns:h.field_1.map((_,w)=>({file_path:P(_.field_1),file_offset:_.field_2,meta_data:_.field_3&&{type:Be[_.field_3.field_1],encodings:_.field_3.field_2?.map(A=>O[A]),path_in_schema:_.field_3.field_3.map(P),codec:st[_.field_3.field_4],num_values:_.field_3.field_5,total_uncompressed_size:_.field_3.field_6,total_compressed_size:_.field_3.field_7,key_value_metadata:_.field_3.field_8?.map(A=>({key:P(A.field_1),value:P(A.field_2)})),data_page_offset:_.field_3.field_9,index_page_offset:_.field_3.field_10,dictionary_page_offset:_.field_3.field_11,statistics:dn(_.field_3.field_12,u[w],i),encoding_stats:_.field_3.field_13?.map(A=>({page_type:de[A.field_1],encoding:O[A.field_2],count:A.field_3})),bloom_filter_offset:_.field_3.field_14,bloom_filter_length:_.field_3.field_15,size_statistics:_.field_3.field_16&&{unencoded_byte_array_data_bytes:_.field_3.field_16.field_1,repetition_level_histogram:_.field_3.field_16.field_2,definition_level_histogram:_.field_3.field_16.field_3},geospatial_statistics:_.field_3.field_17&&{bbox:_.field_3.field_17.field_1&&{xmin:_.field_3.field_17.field_1.field_1,xmax:_.field_3.field_17.field_1.field_2,ymin:_.field_3.field_17.field_1.field_3,ymax:_.field_3.field_17.field_1.field_4,zmin:_.field_3.field_17.field_1.field_5,zmax:_.field_3.field_17.field_1.field_6,mmin:_.field_3.field_17.field_1.field_7,mmax:_.field_3.field_17.field_1.field_8},geospatial_types:_.field_3.field_17.field_2}},offset_index_offset:_.field_4,offset_index_length:_.field_5,column_index_offset:_.field_6,column_index_length:_.field_7,crypto_metadata:_.field_8,encrypted_column_metadata:_.field_9})),total_byte_size:h.field_2,num_rows:h.field_3,sorting_columns:h.field_4?.map(_=>({column_idx:_.field_1,descending:_.field_2,nulls_first:_.field_3})),file_offset:h.field_5,total_compressed_size:h.field_6,ordinal:h.field_7})),g=d.field_5?.map(h=>({key:P(h.field_1),value:P(h.field_2)})),y=P(d.field_6);return r&&ht(a,g),{version:c,schema:a,num_rows:m,row_groups:p,key_value_metadata:g,created_by:y,metadata_length:f}}function R({schema:e}){return _e(e,[])[0]}function un(e){return e?.field_1?{type:"STRING"}:e?.field_2?{type:"MAP"}:e?.field_3?{type:"LIST"}:e?.field_4?{type:"ENUM"}:e?.field_5?{type:"DECIMAL",scale:e.field_5.field_1,precision:e.field_5.field_2}:e?.field_6?{type:"DATE"}:e?.field_7?{type:"TIME",isAdjustedToUTC:e.field_7.field_1,unit:gt(e.field_7.field_2)}:e?.field_8?{type:"TIMESTAMP",isAdjustedToUTC:e.field_8.field_1,unit:gt(e.field_8.field_2)}:e?.field_10?{type:"INTEGER",bitWidth:e.field_10.field_1,isSigned:e.field_10.field_2}:e?.field_11?{type:"NULL"}:e?.field_12?{type:"JSON"}:e?.field_13?{type:"BSON"}:e?.field_14?{type:"UUID"}:e?.field_15?{type:"FLOAT16"}:e?.field_16?{type:"VARIANT",specification_version:e.field_16.field_1}:e?.field_17?{type:"GEOMETRY",crs:P(e.field_17.field_1)}:e?.field_18?{type:"GEOGRAPHY",crs:P(e.field_18.field_1),algorithm:lt[e.field_18.field_2]}:e}function gt(e){if(e.field_1)return"MILLIS";if(e.field_2)return"MICROS";if(e.field_3)return"NANOS";throw new Error("parquet time unit required")}function dn(e,t,r){return e&&{max:Y(e.field_1,t,r),min:Y(e.field_2,t,r),null_count:e.field_3,distinct_count:e.field_4,max_value:Y(e.field_5,t,r),min_value:Y(e.field_6,t,r),is_max_value_exact:e.field_7,is_min_value_exact:e.field_8}}function Y(e,t,r){let{type:n,converted_type:i,logical_type:o}=t;if(e===void 0)return e;if(n==="BOOLEAN")return e[0]===1;if(n==="BYTE_ARRAY")return r.stringFromBytes(e);let f=new DataView(e.buffer,e.byteOffset,e.byteLength);if(n==="FLOAT"&&f.byteLength===4)return f.getFloat32(0,!0);if(n==="DOUBLE"&&f.byteLength===8)return f.getFloat64(0,!0);if(n==="INT32"&&i==="DECIMAL"&&f.byteLength===4)return f.getInt32(0,!0)*10**-(t.scale||0);if(n==="INT64"&&i==="DECIMAL"&&f.byteLength===8)return Number(f.getBigInt64(0,!0))*10**-(t.scale||0);if(n==="INT32"&&i==="DATE")return r.dateFromDays(f.getInt32(0,!0));if(n==="INT64"&&i==="TIMESTAMP_MILLIS")return r.timestampFromMilliseconds(f.getBigInt64(0,!0));if(n==="INT64"&&i==="TIMESTAMP_MICROS")return r.timestampFromMicroseconds(f.getBigInt64(0,!0));if(n==="INT64"&&o?.type==="TIMESTAMP"&&o?.unit==="NANOS")return r.timestampFromNanoseconds(f.getBigInt64(0,!0));if(n==="INT64"&&o?.type==="TIMESTAMP"&&o?.unit==="MICROS")return r.timestampFromMicroseconds(f.getBigInt64(0,!0));if(n==="INT64"&&o?.type==="TIMESTAMP")return r.timestampFromMilliseconds(f.getBigInt64(0,!0));let s=i?.startsWith("UINT_")||o?.type==="INTEGER"&&!o.isSigned;return n==="INT32"&&s&&f.byteLength===4?f.getUint32(0,!0):n==="INT64"&&s&&f.byteLength===8?f.getBigUint64(0,!0):n==="INT32"&&f.byteLength===4?f.getInt32(0,!0):n==="INT64"&&f.byteLength===8?f.getBigInt64(0,!0):i==="DECIMAL"?Me(e)*10**-(t.scale||0):o?.type==="FLOAT16"?Ue(e):o?.type==="UUID"?r.uuidFromBytes(e):e}function yt(e,t,r=void 0){let n={...M,...r},i=N(e);return{null_pages:i.field_1,min_values:i.field_2.map(o=>Y(o,t,n)),max_values:i.field_3.map(o=>Y(o,t,n)),boundary_order:at[i.field_4],null_counts:i.field_5,repetition_level_histograms:i.field_6,definition_level_histograms:i.field_7}}function ie(e){let t=N(e);return{page_locations:t.field_1.map(r=>({offset:r.field_1,compressed_page_size:r.field_2,first_row_index:r.field_3})),unencoded_byte_array_data_bytes:t.field_2}}var b=0xffffffffffffffffn,j=0x9e3779b185ebca87n,oe=0xc2b2ae3d27d4eb4fn,wt=0x165667b19e3779f9n,Et=0x85ebca77c2b2ae63n,At=0x27d4eb2f165667c5n;function $(e,t){return(e<<t|e>>64n-t)&b}function K(e,t){return e=e+t*oe&b,e=$(e,31n),e*j&b}function ye(e,t){return e^=K(0n,t),e*j+Et&b}function D(e,t=0n){let r=new DataView(e.buffer,e.byteOffset,e.byteLength),n=e.byteLength,i=0,o;if(n>=32){let f=t+j+oe&b,s=t+oe&b,l=t,d=t-j&b;for(;i+32<=n;)f=K(f,r.getBigUint64(i,!0)),i+=8,s=K(s,r.getBigUint64(i,!0)),i+=8,l=K(l,r.getBigUint64(i,!0)),i+=8,d=K(d,r.getBigUint64(i,!0)),i+=8;o=$(f,1n)+$(s,7n)+$(l,12n)+$(d,18n)&b,o=ye(o,f),o=ye(o,s),o=ye(o,l),o=ye(o,d)}else o=t+At&b;for(o=o+BigInt(n)&b;i+8<=n;)o^=K(0n,r.getBigUint64(i,!0)),o=$(o,27n)*j+Et&b,i+=8;for(i+4<=n&&(o^=BigInt(r.getUint32(i,!0))*j&b,o=$(o,23n)*oe+wt&b,i+=4);i<n;)o^=BigInt(r.getUint8(i))*At&b,o=$(o,11n)*j&b,i+=1;return o^=o>>33n,o=o*oe&b,o^=o>>29n,o=o*wt&b,o^=o>>32n,o}var pn=new TextEncoder,mn=new Uint32Array([1203114875,1150766481,2284105051,2729912477,1884591559,770785867,2667333959,1550580529]);function _n(e,t){return Number((e>>32n)*BigInt(t)>>32n)}function hn(e){let t=new Uint32Array(8),r=Number(e&0xffffffffn)|0;for(let n=0;n<8;n++)t[n]=1<<(Math.imul(r,mn[n])>>>27);return t}function qe(e,t){let r=_n(t,e.length>>3)<<3,n=hn(t);for(let i=0;i<8;i++)if((e[r+i]&n[i])===0)return!1;return!0}function It(e){let t=N(e),r=t.field_1;if(typeof r!="number"||r<=0||r%32!==0||!t.field_2?.field_1||!t.field_3?.field_1||!t.field_4?.field_1)return;let{view:n,offset:i}=e;if(i+r>n.byteLength)throw new Error(`parquet bloom filter truncated: need ${r} bytes, have ${n.byteLength-i}`);let o=new Uint32Array(r>>2);for(let f=0;f<o.length;f++)o[f]=n.getUint32(i+f*4,!0);return e.offset=i+r,{numBytes:r,blocks:o}}function ke(e,t){if(e==null)return;let{type:r,converted_type:n,logical_type:i}=t;if(r==="BOOLEAN")return typeof e!="boolean"?void 0:D(new Uint8Array([e?1:0]));if(r==="FLOAT"){if(typeof e!="number")return;let o=new ArrayBuffer(4);return new DataView(o).setFloat32(0,e,!0),D(new Uint8Array(o))}if(r==="DOUBLE"){if(typeof e!="number")return;let o=new ArrayBuffer(8);return new DataView(o).setFloat64(0,e,!0),D(new Uint8Array(o))}if(r==="INT32"){if(n==="DATE"||n==="DECIMAL"||n==="TIME_MILLIS"||i?.type==="DATE"||i?.type==="TIME"||i?.type==="DECIMAL"||typeof e!="number"||!Number.isInteger(e))return;let o=new ArrayBuffer(4);return new DataView(o).setInt32(0,e|0,!0),D(new Uint8Array(o))}if(r==="INT64"){if(n==="TIMESTAMP_MILLIS"||n==="TIMESTAMP_MICROS"||n==="TIME_MICROS"||n==="DECIMAL"||i?.type==="TIMESTAMP"||i?.type==="TIME"||i?.type==="DECIMAL")return;let o;if(typeof e=="bigint")o=e;else if(typeof e=="number"&&Number.isSafeInteger(e))o=BigInt(e);else return;let f=new ArrayBuffer(8);return new DataView(f).setBigUint64(0,BigInt.asUintN(64,o),!0),D(new Uint8Array(f))}if(r==="BYTE_ARRAY")return n==="JSON"||n==="BSON"||n==="DECIMAL"||i?.type==="JSON"||i?.type==="BSON"||i?.type==="VARIANT"||i?.type==="GEOMETRY"||i?.type==="GEOGRAPHY"?void 0:typeof e=="string"?D(pn.encode(e)):e instanceof Uint8Array?D(e):void 0;if(r==="FIXED_LEN_BYTE_ARRAY")return n==="DECIMAL"||n==="INTERVAL"||i?.type==="DECIMAL"||i?.type==="UUID"||i?.type==="FLOAT16"||i?.type==="GEOMETRY"||i?.type==="GEOGRAPHY"?void 0:e instanceof Uint8Array?D(e):void 0}function xt(e){let t=new Set;return Fe(e,t),t}function Fe(e,t){if(e){if("$and"in e&&Array.isArray(e.$and)){for(let r of e.$and)Fe(r,t);return}if("$or"in e&&Array.isArray(e.$or)){for(let r of e.$or)Fe(r,t);return}if(!("$nor"in e))for(let[r,n]of Object.entries(e))r.startsWith("$")||(typeof n=="object"&&n!==null&&!Array.isArray(n)?("$eq"in n||"$in"in n)&&t.add(r):t.add(r))}}function Ye(e,t){for(let n=0;n<t.length;n+=1e4)e.push(...t.slice(n,n+1e4))}function T(e,t,r=!0){if(r?e===t:e==t)return!0;if(!e||!t||typeof e!="object"||typeof t!="object")return!1;if(e instanceof Uint8Array&&t instanceof Uint8Array){if(e.length!==t.length)return!1;for(let i=0;i<e.length;i++)if(e[i]!==t[i])return!1;return!0}if(e instanceof Date||t instanceof Date)return e instanceof Date&&t instanceof Date&&e.getTime()===t.getTime();if(Array.isArray(e)&&Array.isArray(t)){if(e.length!==t.length)return!1;for(let i=0;i<e.length;i++)if(!T(e[i],t[i],r))return!1;return!0}let n=Object.keys(e);if(n.length!==Object.keys(t).length)return!1;for(let i of n)if(!T(e[i],t[i],r))return!1;return!0}function Ge(e){if(!e)return[];if(e.length===1)return e[0];let t=[];for(let r of e)Ye(t,r);return t}var bt=new TextEncoder;function J(e){if(!e)return[];let t=[];return"$and"in e&&Array.isArray(e.$and)?t.push(...e.$and.flatMap(J)):"$or"in e&&Array.isArray(e.$or)?t.push(...e.$or.flatMap(J)):"$nor"in e&&Array.isArray(e.$nor)?t.push(...e.$nor.flatMap(J)):t.push(...Object.keys(e)),[...new Set(t)]}function Ae(e){return[...new Set(J(e).map(t=>t.split(".")[0]))]}function F(e,t,r=!0){return"$and"in t&&Array.isArray(t.$and)?t.$and.every(n=>F(e,n,r)):"$or"in t&&Array.isArray(t.$or)?t.$or.some(n=>F(e,n,r)):"$nor"in t&&Array.isArray(t.$nor)?!t.$nor.some(n=>F(e,n,r)):Object.entries(t).every(([n,i])=>{let o=wn(e,n);return typeof i!="object"||i===null||Array.isArray(i)?T(o,i,r):Object.entries(i||{}).every(([f,s])=>f==="$gt"?o!=null&&o>s:f==="$gte"?o!=null&&o>=s:f==="$lt"?o!=null&&o<s:f==="$lte"?o!=null&&o<=s:f==="$eq"?T(o,s,r):f==="$ne"?!T(o,s,r):f==="$in"?Array.isArray(s)&&vt(o,s,r):f==="$nin"?Array.isArray(s)&&!vt(o,s,r):f==="$not"?!F({value:o},{value:s},r):!0)})}function vt(e,t,r){return t.some(n=>T(e,n,r)||Array.isArray(e)&&e.some(i=>T(i,n,r)))}function Q({rowGroup:e,physicalColumns:t,filter:r,strict:n=!0,bloomFilters:i,schemaElements:o}){if(!r)return!1;if("$and"in r&&Array.isArray(r.$and))return r.$and.some(f=>Q({rowGroup:e,physicalColumns:t,filter:f,strict:n,bloomFilters:i,schemaElements:o}));if("$or"in r&&Array.isArray(r.$or))return r.$or.every(f=>Q({rowGroup:e,physicalColumns:t,filter:f,strict:n,bloomFilters:i,schemaElements:o}));if("$nor"in r&&Array.isArray(r.$nor))return!1;for(let[f,s]of Object.entries(r)){let l=t.indexOf(f);if(l===-1)continue;let d=e.columns[l].meta_data?.statistics,{min:c,max:a,min_value:u,max_value:m,null_count:p}=d||{},g=u!==void 0?u:c,y=m!==void 0?m:a,h=g!==void 0&&y!==void 0,_=i?.[f],w=o?.[f],A=F({value:null},{value:s},n)&&(p===void 0||p>0);if(h&&!A&&Lt(s,g,y,n,w))return!0;for(let[I,x]of Object.entries(s||{}))if(_&&w){if(I==="$eq"){let E=ke(x,w);if(E!==void 0&&!qe(_.blocks,E))return!0}if(I==="$in"&&Array.isArray(x)&&x.length>0){let E=!0;for(let L of x){let v=ke(L,w);if(v===void 0||qe(_.blocks,v)){E=!1;break}}if(E)return!0}}}return!1}function Lt(e,t,r,n,i){if(t===void 0||r===void 0)return!1;let o=i?.type==="FLOAT"||i?.type==="DOUBLE"||i?.logical_type?.type==="FLOAT16";for(let[f,s]of Object.entries(e||{})){let l=Z(t,s,n,i),d=Z(r,s,n,i),a=!(t instanceof Uint8Array||r instanceof Uint8Array)&&(i?.type!=="BYTE_ARRAY"||typeof s=="string"&&[...s].every(u=>u.charCodeAt(0)<=127));if(f==="$gt"&&a&&d!==void 0&&d<=0||f==="$gte"&&a&&d!==void 0&&d<0||f==="$lt"&&a&&l!==void 0&&l>=0||f==="$lte"&&a&&l!==void 0&&l>0)return!0;if(f==="$eq"){let u=Z(s,t,n,i),m=Z(s,r,n,i);if(u!==void 0&&u<0||m!==void 0&&m>0)return!0}if(f==="$ne"&&!o&&T(t,r,n)&&T(t,s,n)||f==="$in"&&Array.isArray(s)&&s.every(u=>{let m=Z(u,t,n,i),p=Z(u,r,n,i);return m!==void 0&&m<0||p!==void 0&&p>0})||f==="$nin"&&!o&&Array.isArray(s)&&T(t,r,n)&&s.some(u=>T(t,u,n)))return!0}return!1}function Z(e,t,r,n){if(n?.type==="BYTE_ARRAY")return typeof e!="string"||typeof t!="string"?void 0:Tt(bt.encode(e),bt.encode(t));if(e instanceof Uint8Array||t instanceof Uint8Array)return!(e instanceof Uint8Array)||!(t instanceof Uint8Array)?void 0:Tt(e,t);if(e<t)return-1;if(e>t)return 1;if(T(e,t,r))return 0}function Tt(e,t){let r=Math.min(e.length,t.length);for(let n=0;n<r;n++){if(e[n]<t[n])return-1;if(e[n]>t[n])return 1}return e.length<t.length?-1:e.length>t.length?1:0}function gn(e,t){return F({value:null},{value:e},t)}function we(e,t,r,n=!0){if(!e)return;if("$and"in e&&Array.isArray(e.$and)){let o;for(let f of e.$and)o=Rt(o,we(f,t,r,n));return o}if("$or"in e&&Array.isArray(e.$or)){let o=[];for(let f of e.$or){let s=we(f,t,r,n);if(!s)return;o=yn(o,s)}return o}if("$nor"in e&&Array.isArray(e.$nor))return;let i;for(let[o,f]of Object.entries(e)){let s=t[o];if(!s)continue;let l=gn(f,n),d=[];for(let c=0;c<s.pageStarts.length;c++){let a=s.pageStarts[c],u=c+1<s.pageStarts.length?s.pageStarts[c+1]:r,m=s.nullCounts?.[c],p=l&&(m===void 0||m>0);if(!(!s.nullPages[c]&&!p&&Lt(f,s.minValues[c],s.maxValues[c],n,s.element))){let y=d[d.length-1];y&&y[1]===a?y[1]=u:d.push([a,u])}}i=Rt(i,d)}return i}function Rt(e,t){if(!e)return t;if(!t)return e;let r=[],n=0,i=0;for(;n<e.length&&i<t.length;){let o=Math.max(e[n][0],t[i][0]),f=Math.min(e[n][1],t[i][1]);o<f&&r.push([o,f]),e[n][1]<t[i][1]?n++:i++}return r}function yn(e,t){let r=[],n=0,i=0;for(;n<e.length||i<t.length;){let o=i>=t.length||n<e.length&&e[n][0]<=t[i][0]?e[n++]:t[i++],f=r[r.length-1];f&&o[0]<=f[1]?f[1]=Math.max(f[1],o[1]):r.push([o[0],o[1]])}return r}function wn(e,t){let r=e;for(let n of t.split("."))r=r?.[n];return r}var An=1<<21;function St(e){let{metadata:t,rowStart:r=0,columns:n,useOffsetIndex:i=!1}=e;if(!t)throw new Error("parquetPlan requires metadata");let o=[],f=[],s=[],l=Nt(e);for(let d of l.groups){let c=Pt({...d,columns:n,useOffsetIndex:i});o.push(...c.groups),f.push(...c.fetches),s.push(...c.indexes)}return f.push(...s),{metadata:t,rowStart:r,rowEnd:l.rowEnd,columns:n,fetches:f,groups:o}}function Nt({metadata:e,rowStart:t=0,rowEnd:r=1/0,columns:n,filter:i,filterStrict:o=!0,bloomFiltersByGroup:f,schemaElements:s,pageRangesByGroup:l,pageLocationsByGroup:d}){if(!e)throw new Error("parquetPlan requires metadata");let c=R(e),a=he(c),u=i?{...Ut(c),...s}:s,m=[],p=0;for(let g=0;g<e.row_groups.length;g++){let y=e.row_groups[g],h=Number(y.num_rows),_=p+h;if(h>0&&_>t&&p<r&&!Q({rowGroup:y,physicalColumns:a,filter:i,strict:o,bloomFilters:f?.[g],schemaElements:u})){let w=Math.max(t-p,0),A=Math.min(r-p,h),I=l?.[g],x=d?.[g],E=I?I.map(([L,v])=>[Math.max(L,w),Math.min(v,A)]).filter(([L,v])=>L<v):[[w,A]];E.length>1&&(E=y.columns.every(v=>{let q=v.meta_data?.path_in_schema[0],z=v.meta_data?.path_in_schema.join(".");return n&&q&&!n.includes(q)?!0:!!(v.offset_index_offset&&v.offset_index_length)||!!(z&&x?.[z])})?En(E,y,n,x):[[E[0][0],E[E.length-1][1]]]),E.length&&m.push({rowGroup:y,groupIndex:g,groupStart:p,groupRows:h,ranges:E,pageRanges:I,pageLocations:x})}p=_}return{groups:m,rowEnd:isFinite(r)?r:p}}function Pt({rowGroup:e,groupStart:t,groupRows:r,ranges:n,columns:i,useOffsetIndex:o=!1,pageRanges:f,pageLocations:s}){let l=[],d=[],c=[],a=n.length>1||n[0][0]>0||n[0][1]<r;for(let p of e.columns){let g=p.meta_data;if(p.file_path)throw new Error("parquet file_path not supported");if(!g)throw new Error("parquet column metadata is undefined");if(i&&!i.includes(g.path_in_schema[0]))continue;let y=g.dictionary_page_offset||g.data_page_offset,h=Number(y),_=Number(y+g.total_compressed_size),w=s?.[g.path_in_schema.join(".")];if(w&&a)l.push({columnMetadata:g,pageLocations:w,range:{startByte:h,endByte:_}});else if((o||f)&&p.offset_index_offset&&p.offset_index_length&&a){let A=Number(p.offset_index_offset);l.push({columnMetadata:g,offsetIndex:{startByte:A,endByte:A+p.offset_index_length},range:{startByte:Number(y),endByte:_}})}else l.push({columnMetadata:g,range:{startByte:h,endByte:_}})}let u;for(let p of l)"pageLocations"in p||("offsetIndex"in p?c.push(p.offsetIndex):i?d.push(p.range):u&&p.range.endByte-u.startByte<=An?u.endByte=p.range.endByte:(u&&d.push(u),u={...p.range}));return u&&d.push(u),{groups:n.map(([p,g])=>({chunks:l,rowGroup:e,groupStart:t,groupRows:r,selectStart:p,selectEnd:g})),fetches:d,indexes:c}}function En(e,t,r,n){let i=t.columns.filter(f=>!r||r.includes(f.meta_data?.path_in_schema[0]||"")).map(f=>n?.[f.meta_data?.path_in_schema.join(".")||""]),o=[];for(let f of e){let s=o[o.length-1],l=s&&i.some(d=>{if(!d)return!0;let c=Bt(s,d,Number(t.num_rows)),a=Bt(f,d,Number(t.num_rows));return c[0]<=a[1]&&a[0]<=c[1]});s&&l?s[1]=f[1]:o.push([...f])}return o}function Bt([e,t],r,n){let i=1/0,o=-1/0;for(let f=0;f<r.length;f++){let s=Number(r[f].first_row_index);(f+1<r.length?Number(r[f+1].first_row_index):n)>e&&s<t&&(i=Math.min(i,f),o=f)}return[i,o]}async function Ot({file:e,metadata:t,filter:r,filterStrict:n=!0}){let i=t.row_groups.map(()=>({})),o=xt(r);if(o.size===0)return i;let f=he(R(t)),s=[];return t.row_groups.forEach((l,d)=>{if(!Q({rowGroup:l,physicalColumns:f,filter:r,strict:n}))for(let c of o){let a=f.indexOf(c);if(a===-1)continue;let u=l.columns[a]?.meta_data;if(!u?.bloom_filter_offset||!u.bloom_filter_length)continue;let m=Number(u.bloom_filter_offset),p=m+u.bloom_filter_length;s.push((async()=>{let g=await e.slice(m,p),y=It({view:new DataView(g),offset:0});y&&(i[d][c]=y)})())}}),s.length&&await Promise.all(s),i}async function Mt({file:e,metadata:t,filter:r,filterStrict:n=!0,rowStart:i=0,rowEnd:o=1/0,columns:f,bloomFiltersByGroup:s,schemaElements:l,parsers:d}){let c=t.row_groups.map(()=>{}),a=t.row_groups.map(()=>({}));if(r&&"$nor"in r&&Array.isArray(r.$nor))return{pageRangesByGroup:c,pageLocationsByGroup:a};let u=J(r);if(!u.length)return{pageRangesByGroup:c,pageLocationsByGroup:a};let m=R(t),p=he(m),g={...Ut(m),...l},y=[],h=[],_=[],w=0;if(t.row_groups.forEach((A,I)=>{let x=Number(A.num_rows),E=w+x,L=x>0&&E>i&&w<o;if(w=E,!L||Q({rowGroup:A,physicalColumns:p,filter:r,strict:n,bloomFilters:s?.[I],schemaElements:g}))return;let v={},q=0,z=new Set,nt=!1;for(let B of u){let W=p.indexOf(B);if(W===-1)continue;let S=A.columns[W];if(!S?.meta_data||!S.column_index_offset||!S.column_index_length||!S.offset_index_offset||!S.offset_index_length)continue;let k=g[B];if(!k)continue;nt=!0,z.add(B);let H=Number(S.column_index_offset),te=Number(S.offset_index_offset),le=H+S.column_index_length,ce=te+S.offset_index_length;y.push({startByte:H,endByte:le},{startByte:te,endByte:ce}),q++,h.push(async rt=>{let[Jt,Qt]=await Promise.all([rt.slice(H,le),rt.slice(te,ce)]),ue=yt({view:new DataView(Jt),offset:0},k,d),it=ie({view:new DataView(Qt),offset:0});a[I][B]=it.page_locations,v[B]={minValues:ue.min_values,maxValues:ue.max_values,nullPages:ue.null_pages,nullCounts:ue.null_counts,pageStarts:it.page_locations.map(Xt=>Number(Xt.first_row_index)),element:k}})}if(nt)for(let B of A.columns){let W=B.meta_data;if(!W)continue;let S=W.path_in_schema[0],ae=W.path_in_schema.join(".");if(f&&!f.includes(S)||z.has(ae)||!B.offset_index_offset||!B.offset_index_length)continue;z.add(ae);let k=Number(B.offset_index_offset),H=k+B.offset_index_length;y.push({startByte:k,endByte:H}),q++,h.push(async te=>{let le=await te.slice(k,H),ce=ie({view:new DataView(le),offset:0});a[I][ae]=ce.page_locations})}q&&_.push({rgIdx:I,groupRows:x,columnPages:v})}),h.length){let A=je(e,{fetches:In(y)});await Promise.all(h.map(I=>I(A)));for(let{rgIdx:I,groupRows:x,columnPages:E}of _)c[I]=we(r,E,x,n)}return{pageRangesByGroup:c,pageLocationsByGroup:a}}function In(e){let t=e.map(n=>({...n})).sort((n,i)=>n.startByte-i.startByte||n.endByte-i.endByte),r=[];for(let n of t){let i=r[r.length-1];i&&n.startByte<=i.endByte?i.endByte=Math.max(i.endByte,n.endByte):r.push(n)}return r}function Ut(e){let t={};function r(n){if(n.children.length)for(let i of n.children)r(i);else t[n.path.join(".")]=n.element}return r(e),t}function je(e,{fetches:t}){let r=t.map(({startByte:n,endByte:i})=>e.slice(n,i));return{byteLength:e.byteLength,slice(n,i=e.byteLength){let o=t.findIndex(({startByte:f,endByte:s})=>f<=n&&i<=s);if(o<0)return e.slice(n,i);if(t[o].startByte!==n||t[o].endByte!==i){let f=n-t[o].startByte,s=i-t[o].startByte;return r[o]instanceof Promise?r[o].then(l=>l.slice(f,s)):r[o].slice(f,s)}else return r[o]}}}var ze=new TextDecoder,Dt=new WeakMap;function We(e,t=M){if(Array.isArray(e))return e.map(r=>We(r,t));if(typeof e!="object")return e;if("metadata"in e){let r=xn(e.metadata),n=e.typed_value&&Ee(e.typed_value,r,t),i=e.value&&fe(Ie(e.value),r,t);return n&&i?{...i,...n}:n??i}return e}function Ee(e,t,r){if(e instanceof Date)return e;if(e&&typeof e=="object"&&!Array.isArray(e)&&!(e instanceof Uint8Array)){if("typed_value"in e&&e.typed_value!==null&&e.typed_value!==void 0)return Ee(e.typed_value,t,r);if("value"in e&&e.value instanceof Uint8Array)return fe(Ie(e.value),t,r);if("typed_value"in e||"value"in e)return null;let n={};for(let[i,o]of Object.entries(e))t.dictionary.includes(i)&&(n[i]=Ee(o,t,r));return n}return e instanceof Uint8Array?fe(Ie(e),t,r):Array.isArray(e)?e.map(n=>Ee(n,t,r)):e}function Ie(e){return{view:new DataView(e.buffer,e.byteOffset,e.byteLength),offset:0}}function xn(e){let t=Dt.get(e.buffer);t||(t=new Map,Dt.set(e.buffer,t));let r=`${e.byteOffset}:${e.byteLength}`,n=t.get(r);if(n)return n;let i=Ie(e),o=i.view.getUint8(i.offset++),f=o&15;if(f!==1)throw new Error(`parquet unsupported variant metadata version: ${f}`);let s=(o>>4&1)===1,l=(o>>6&3)+1,d=V(i,l),c=new Array(d+1);for(let p=0;p<c.length;p++)c[p]=V(i,l);let a=i.offset,u=new Array(d);for(let p=0;p<d;p++){let g=c[p],y=c[p+1],h=new Uint8Array(e.buffer,e.byteOffset+a+g,y-g);u[p]=ze.decode(h)}let m={dictionary:u,sorted:s};return t.set(r,m),m}function V(e,t){let r=0;for(let n=0;n<t;n++)r|=e.view.getUint8(e.offset+n)<<n*8;return e.offset+=t,r}function fe(e,t,r){let n=e.view.getUint8(e.offset++),i=n&3,o=n>>2;if(i===0)return bn(e,o,r);if(i===2)return vn(e,o,t,r);if(i===3)return Tn(e,o,t,r);let f=new Uint8Array(e.view.buffer,e.view.byteOffset+e.offset,o);return e.offset+=o,ze.decode(f)}function bn(e,t,r){switch(t){case 0:return null;case 1:return!0;case 2:return!1;case 3:{let n=e.view.getInt8(e.offset);return e.offset+=1,n}case 4:{let n=e.view.getInt16(e.offset,!0);return e.offset+=2,n}case 5:{let n=e.view.getInt32(e.offset,!0);return e.offset+=4,n}case 6:{let n=e.view.getBigInt64(e.offset,!0);return e.offset+=8,n}case 7:{let n=e.view.getFloat64(e.offset,!0);return e.offset+=8,n}case 8:return Ve(e,4);case 9:return Ve(e,8);case 10:return Ve(e,16);case 11:{let n=e.view.getInt32(e.offset,!0);return e.offset+=4,r.dateFromDays(n)}case 12:case 13:{let n=e.view.getBigInt64(e.offset,!0);return e.offset+=8,r.timestampFromMicroseconds(n)}case 14:{let n=e.view.getFloat32(e.offset,!0);return e.offset+=4,n}case 15:return Ct(e);case 16:{let n=Ct(e);return ze.decode(n)}case 17:{let n=e.view.getBigInt64(e.offset,!0);return e.offset+=8,n}case 18:case 19:{let n=e.view.getBigInt64(e.offset,!0);return e.offset+=8,r.timestampFromNanoseconds(n)}case 20:{let n=new Uint8Array(e.view.buffer,e.view.byteOffset+e.offset,16);e.offset+=16;let i=Array.from(n,o=>o.toString(16).padStart(2,"0")).join("");return`${i.slice(0,8)}-${i.slice(8,12)}-${i.slice(12,16)}-${i.slice(16,20)}-${i.slice(20)}`}default:throw new Error(`parquet unsupported variant primitive type: ${t}`)}}function vn(e,t,r,n){let i=(t&3)+1,o=(t>>2&3)+1,s=t>>4&1?V(e,4):e.view.getUint8(e.offset++),l=new Array(s);for(let a=0;a<s;a++)l[a]=V(e,o);let d=new Array(s+1);for(let a=0;a<d.length;a++)d[a]=V(e,i);let c={};for(let a=0;a<s;a++){let u=r.dictionary[l[a]],m={view:e.view,offset:e.offset+d[a]};c[u]=fe(m,r,n)}return e.offset+=d[d.length-1],c}function Tn(e,t,r,n){let i=t&3,o=t>>2&1,f=i+1,s=V(e,o?4:1),l=new Array(s+1);for(let a=0;a<l.length;a++)l[a]=V(e,f);let d=e.offset,c=new Array(s);for(let a=0;a<s;a++){let u={view:e.view,offset:d+l[a]};c[a]=fe(u,r,n)}return e.offset=d+l[l.length-1],c}function Ve(e,t){let r=e.view.getUint8(e.offset);e.offset+=1;let n;if(t===4)n=BigInt(e.view.getInt32(e.offset,!0)),e.offset+=4;else if(t===8)n=e.view.getBigInt64(e.offset,!0),e.offset+=8;else{let i=e.view.getBigUint64(e.offset,!0);n=e.view.getBigInt64(e.offset+8,!0)<<64n|i,e.offset+=16}return Number(n)*10**-r}function Ct(e){let t=e.view.getUint32(e.offset,!0);e.offset+=4;let r=new Uint8Array(e.view.buffer,e.view.byteOffset+e.offset,t);return e.offset+=t,r}function He(e,t,r,n,i){let o=ne(i);if(!t?.length&&!r.length){if(!o||!n.length)return n;t=new Array(n.length).fill(o)}let f=t?.length||r.length,s=i.map(({element:p})=>p.repetition_type),l=0,d=[e],c=e,a=0,u=0,m=0;if(r[0])for(;a<s.length-2&&m<r[0];)a++,s[a]!=="REQUIRED"&&(c=c.at(-1),d.push(c),u++),s[a]==="REPEATED"&&m++;for(let p=0;p<f;p++){let g=t?.length?t[p]:o,y=r[p];for(;a&&(y<m||s[a]!=="REPEATED");)s[a]!=="REQUIRED"&&(d.pop(),u--),s[a]==="REPEATED"&&m--,a--;for(c=d.at(-1);(a<s.length-2||s[a+1]==="REPEATED")&&(u<g||s[a+1]==="REQUIRED");){if(a++,s[a]!=="REQUIRED"){let h=[];c.push(h),c=h,d.push(h),u++}s[a]==="REPEATED"&&m++}g===o?c.push(n[l++]):a===s.length-2?c.push(null):c.push([])}if(!e.length)for(let p=0;p<o;p++){let g=[];c.push(g),c=g}return e}function X(e,t,r,n=0){let i=t.path.join("."),o=t.element.repetition_type==="OPTIONAL",f=o?n+1:n;if(pt(t)){let s=t.children[0],l=f;s.children.length===1&&(s=s.children[0],l++),X(e,s,r,l);let d=s.path.join("."),c=e.get(d);if(!c)throw new Error("parquet list column missing values");o&&xe(c,n),e.set(i,c),e.delete(d);return}if(mt(t)){let s=t.children[0].element.name;X(e,t.children[0].children[0],r,f+1),X(e,t.children[0].children[1],r,f+1);let l=e.get(`${i}.${s}.key`),d=e.get(`${i}.${s}.value`);if(!l)throw new Error("parquet map column missing keys");if(!d)throw new Error("parquet map column missing values");if(l.length!==d.length)throw new Error("parquet map column key/value length mismatch");let c=$t(l,d,f);o&&xe(c,n),e.delete(`${i}.${s}.key`),e.delete(`${i}.${s}.value`),e.set(i,c);return}if(t.children.length){let s=t.element.repetition_type==="REQUIRED"?n:n+1,l={};for(let c of t.children){X(e,c,r,s);let a=e.get(c.path.join("."));if(!a)throw new Error("parquet struct missing child data");l[c.element.name]=a}for(let c of t.children)e.delete(c.path.join("."));let d=Ft(l,s);t.element.logical_type?.type==="VARIANT"&&(d=We(d,r)),o&&xe(d,n),e.set(i,d)}}function xe(e,t){for(let r=0;r<e.length;r++)t?xe(e[r],t-1):e[r]=e[r][0]}function $t(e,t,r){let n=[];for(let i=0;i<e.length;i++)if(r)n.push($t(e[i],t[i],r-1));else if(e[i]){let o={};for(let f=0;f<e[i].length;f++){let s=t[i][f];o[e[i][f]]=s===void 0?null:s}n.push(o)}else n.push(void 0);return n}function Ft(e,t){let r=Object.keys(e),n=e[r[0]]?.length,i=[];for(let o=0;o<n;o++){let f={};for(let s of r){if(e[s].length!==n)throw new Error("parquet struct parsing error");f[s]=e[s][o]}t?i.push(Ft(f,t-1)):i.push(f)}return i}function ee(e,t,r){let n=r instanceof Int32Array,i=U(e),o=U(e);U(e);let f=ge(e),s=0;r[s++]=n?Number(f):f;let l=i/o;for(;s<t;){let d=ge(e),c=new Uint8Array(o);for(let a=0;a<o;a++)c[a]=e.view.getUint8(e.offset++);for(let a=0;a<o&&s<t;a++){let u=BigInt(c[a]);if(u){let m=0n,p=l,g=(1n<<u)-1n;for(;p&&s<t;){let y=BigInt(e.view.getUint8(e.offset))>>m&g;for(m+=u;m>=8;)m-=8n,e.offset++,m&&(y|=BigInt(e.view.getUint8(e.offset))<<u-m&g);let h=d+y;f+=h,r[s++]=n?Number(f):f,p--}p&&(e.offset+=Math.ceil((p*Number(u)+Number(m))/8))}else for(let m=0;m<l&&s<t;m++)f+=d,r[s++]=n?Number(f):f}}}function Ke(e,t,r){let n=new Int32Array(t);ee(e,t,n);for(let i=0;i<t;i++)r[i]=new Uint8Array(e.view.buffer,e.view.byteOffset+e.offset,n[i]),e.offset+=n[i]}function qt(e,t,r){let n=new Int32Array(t);ee(e,t,n);let i=new Int32Array(t);ee(e,t,i);for(let o=0;o<t;o++){let f=new Uint8Array(e.view.buffer,e.view.byteOffset+e.offset,i[o]);n[o]?(r[o]=new Uint8Array(n[o]+i[o]),r[o].set(r[o-1].subarray(0,n[o])),r[o].set(f,n[o])):r[o]=f,e.offset+=i[o]}}function C(e,t,r,n){n===void 0&&(n=e.view.getUint32(e.offset,!0),e.offset+=4);let i=e.offset,o=0;for(;o<r.length;){let f=U(e);if(f&1)o=Ln(e,f,t,r,o);else{let s=f>>>1;Rn(e,s,t,r,o),o+=s}}e.offset=i+n}function Rn(e,t,r,n,i){let o=r+7>>3,f=0;for(let s=0;s<o;s++)f|=e.view.getUint8(e.offset++)<<(s<<3);for(let s=0;s<t;s++)n[i+s]=f}function Ln(e,t,r,n,i){let o=t>>1<<3,f=(1<<r)-1,s=0;if(e.offset<e.view.byteLength)s=e.view.getUint8(e.offset++);else if(f)throw new Error(`parquet bitpack offset ${e.offset} out of range`);let l=8,d=0;for(;o;)d>8?(d-=8,l-=8,s>>>=8):l-d<r?(s|=e.view.getUint8(e.offset)<<l,e.offset++,l+=8):(i<n.length&&(n[i++]=s>>d&f),o--,d+=r);return i}function Ze(e,t,r,n){let i=Bn(r,n),o=new Uint8Array(t*i);for(let f=0;f<i;f++)for(let s=0;s<t;s++)o[s*i+f]=e.view.getUint8(e.offset++);if(r==="FLOAT")return new Float32Array(o.buffer);if(r==="DOUBLE")return new Float64Array(o.buffer);if(r==="INT32")return new Int32Array(o.buffer);if(r==="INT64")return new BigInt64Array(o.buffer);if(r==="FIXED_LEN_BYTE_ARRAY"){let f=new Array(t);for(let s=0;s<t;s++)f[s]=o.subarray(s*i,(s+1)*i);return f}throw new Error(`parquet byte_stream_split unsupported type: ${r}`)}function Bn(e,t){switch(e){case"INT32":case"FLOAT":return 4;case"INT64":case"DOUBLE":return 8;case"FIXED_LEN_BYTE_ARRAY":if(!t)throw new Error("parquet byteWidth missing type_length");return t;default:throw new Error(`parquet unsupported type: ${e}`)}}function se(e,t,r,n){if(r===0)return[];if(t==="BOOLEAN")return Sn(e,r);if(t==="INT32")return Nn(e,r);if(t==="INT64")return Pn(e,r);if(t==="INT96")return On(e,r);if(t==="FLOAT")return Mn(e,r);if(t==="DOUBLE")return Un(e,r);if(t==="BYTE_ARRAY")return Dn(e,r);if(t==="FIXED_LEN_BYTE_ARRAY"){if(!n)throw new Error("parquet missing fixed length");return Cn(e,r,n)}else throw new Error(`parquet unhandled type: ${t}`)}function Sn(e,t){let r=new Array(t);for(let n=0;n<t;n++){let i=e.offset+(n/8|0),o=n%8,f=e.view.getUint8(i);r[n]=(f&1<<o)!==0}return e.offset+=Math.ceil(t/8),r}function Nn(e,t){let r=(e.view.byteOffset+e.offset)%4?new Int32Array(be(e.view.buffer,e.view.byteOffset+e.offset,t*4)):new Int32Array(e.view.buffer,e.view.byteOffset+e.offset,t);return e.offset+=t*4,r}function Pn(e,t){let r=(e.view.byteOffset+e.offset)%8?new BigInt64Array(be(e.view.buffer,e.view.byteOffset+e.offset,t*8)):new BigInt64Array(e.view.buffer,e.view.byteOffset+e.offset,t);return e.offset+=t*8,r}function On(e,t){let r=new Array(t);for(let n=0;n<t;n++){let i=e.view.getBigInt64(e.offset+n*12,!0),o=e.view.getInt32(e.offset+n*12+8,!0);r[n]=BigInt(o)<<64n|i}return e.offset+=t*12,r}function Mn(e,t){let r=(e.view.byteOffset+e.offset)%4?new Float32Array(be(e.view.buffer,e.view.byteOffset+e.offset,t*4)):new Float32Array(e.view.buffer,e.view.byteOffset+e.offset,t);return e.offset+=t*4,r}function Un(e,t){let r=(e.view.byteOffset+e.offset)%8?new Float64Array(be(e.view.buffer,e.view.byteOffset+e.offset,t*8)):new Float64Array(e.view.buffer,e.view.byteOffset+e.offset,t);return e.offset+=t*8,r}function Dn(e,t){let r=new Array(t);for(let n=0;n<t;n++){let i=e.view.getUint32(e.offset,!0);e.offset+=4,r[n]=new Uint8Array(e.view.buffer,e.view.byteOffset+e.offset,i),e.offset+=i}return r}function Cn(e,t,r){let n=new Array(t);for(let i=0;i<t;i++)n[i]=new Uint8Array(e.view.buffer,e.view.byteOffset+e.offset,r),e.offset+=r;return n}function be(e,t,r){let n=new ArrayBuffer(r);return new Uint8Array(n).set(new Uint8Array(e,t,r)),n}var $n=[0,255,65535,16777215,4294967295];function kt(e,t,r,n,i){for(let o=0;o<i;o++)r[n+o]=e[t+o]}function Yt(e,t){let r=e.byteLength,n=t.byteLength,i=0,o=0;for(;i<r;){let f=e[i];if(i++,f<128)break}if(n&&i>=r)throw new Error("invalid snappy length header");for(;i<r;){let f=e[i],s=0;if(i++,i>=r)throw new Error("missing eof marker");if((f&3)===0){let l=(f>>>2)+1;if(l>60){if(i+3>=r)throw new Error("snappy error literal pos + 3 >= inputLength");let d=l-60;l=e[i]+(e[i+1]<<8)+(e[i+2]<<16)+(e[i+3]<<24),l=(l&$n[d])+1,i+=d}if(i+l>r)throw new Error("snappy error literal exceeds input length");kt(e,i,t,o,l),i+=l,o+=l}else{let l=0;switch(f&3){case 1:s=(f>>>2&7)+4,l=e[i]+(f>>>5<<8),i++;break;case 2:if(r<=i+1)throw new Error("snappy error end of input");s=(f>>>2)+1,l=e[i]+(e[i+1]<<8),i+=2;break;case 3:if(r<=i+3)throw new Error("snappy error end of input");s=(f>>>2)+1,l=e[i]+(e[i+1]<<8)+(e[i+2]<<16)+(e[i+3]<<24),i+=4;break;default:break}if(l===0||isNaN(l))throw new Error(`invalid offset ${l} pos ${i} inputLength ${r}`);if(l>o)throw new Error("cannot copy from before start of buffer");kt(t,o-l,t,o,s),o+=s}}if(o!==n)throw new Error("premature end of input")}function Gt(e,t,{type:r,element:n,schemaPath:i}){let o=new DataView(e.buffer,e.byteOffset,e.byteLength),f={view:o,offset:0},s,l=Fn(f,t,i),{definitionLevels:d,numNulls:c}=qn(f,t,i),a=t.num_values-c;if(t.encoding==="PLAIN")s=se(f,r,a,n.type_length);else if(t.encoding==="PLAIN_DICTIONARY"||t.encoding==="RLE_DICTIONARY"||t.encoding==="RLE"){let u=r==="BOOLEAN"?1:o.getUint8(f.offset++);u?(s=new Array(a),r==="BOOLEAN"?(C(f,u,s),s=s.map(m=>!!m)):C(f,u,s,o.byteLength-f.offset)):s=new Uint8Array(a)}else if(t.encoding==="BYTE_STREAM_SPLIT")s=Ze(f,a,r,n.type_length);else if(t.encoding==="DELTA_BINARY_PACKED")s=r==="INT32"?new Int32Array(a):new BigInt64Array(a),ee(f,a,s);else if(t.encoding==="DELTA_LENGTH_BYTE_ARRAY")s=new Array(a),Ke(f,a,s);else throw new Error(`parquet unsupported encoding: ${t.encoding}`);return{definitionLevels:d,repetitionLevels:l,dataPage:s}}function Fn(e,t,r){if(r.length>1){let n=De(r);if(n){let i=new Array(t.num_values);return C(e,Te(n),i),i}}return[]}function qn(e,t,r){let n=ne(r);if(!n)return{definitionLevels:[],numNulls:0};let i=new Array(t.num_values);C(e,Te(n),i);let o=t.num_values;for(let f of i)f===n&&o--;return o===0&&(i.length=0),{definitionLevels:i,numNulls:o}}function ve(e,t,r,n){let i,o=n?.[r];if(r==="UNCOMPRESSED")i=e;else if(o)i=o(e,t);else if(r==="SNAPPY")i=new Uint8Array(t),Yt(e,i);else throw new Error(`parquet unsupported compression codec: ${r}`);if(i?.length!==t)throw new Error(`parquet decompressed page length ${i?.length} does not match header ${t}`);return i}function jt(e,t,r){let i={view:new DataView(e.buffer,e.byteOffset,e.byteLength),offset:0},{type:o,element:f,schemaPath:s,codec:l,compressors:d}=r,c=t.data_page_header_v2;if(!c)throw new Error("parquet data page header v2 is undefined");let a=kn(i,c,s);i.offset=c.repetition_levels_byte_length;let u=Yn(i,c,s),m=t.uncompressed_page_size-c.definition_levels_byte_length-c.repetition_levels_byte_length,p=e.subarray(i.offset);c.is_compressed!==!1&&(p=ve(p,m,l,d));let g=new DataView(p.buffer,p.byteOffset,p.byteLength),y={view:g,offset:0},h,_=c.num_values-c.num_nulls;if(c.encoding==="PLAIN")h=se(y,o,_,f.type_length);else if(c.encoding==="RLE")h=new Array(_),C(y,1,h),h=h.map(w=>!!w);else if(c.encoding==="PLAIN_DICTIONARY"||c.encoding==="RLE_DICTIONARY"){let w=g.getUint8(y.offset++);h=new Array(_),C(y,w,h,m-1)}else if(c.encoding==="DELTA_BINARY_PACKED")h=o==="INT32"?new Int32Array(_):new BigInt64Array(_),ee(y,_,h);else if(c.encoding==="DELTA_LENGTH_BYTE_ARRAY")h=new Array(_),Ke(y,_,h);else if(c.encoding==="DELTA_BYTE_ARRAY")h=new Array(_),qt(y,_,h);else if(c.encoding==="BYTE_STREAM_SPLIT")h=Ze(y,_,o,f.type_length);else throw new Error(`parquet unsupported encoding: ${c.encoding}`);return{definitionLevels:u,repetitionLevels:a,dataPage:h}}function kn(e,t,r){let n=De(r);if(!n)return[];let i=new Array(t.num_values);return C(e,Te(n),i,t.repetition_levels_byte_length),i}function Yn(e,t,r){let n=ne(r);if(n){let i=new Array(t.num_values);return C(e,Te(n),i,t.definition_levels_byte_length),i}}function Te(e){return 32-Math.clz32(e)}function Je(e,{groupStart:t,selectStart:r,selectEnd:n},i,o){let{pathInSchema:f,schemaPath:s}=i,l=Ce(s),d=[],c,a,u=0,m=0,p=o&&(()=>{a&&o({pathInSchema:f,columnData:a,rowStart:t+u-a.length,rowEnd:t+u})});for(;(l?u<n:e.offset<e.view.byteLength-1)&&!(e.offset>=e.view.byteLength-1);){let g=Gn(e);if(g.type==="DICTIONARY_PAGE"){let{data:y}=Vt(e,g,i,c,void 0,0);y&&(c=Oe(y,i))}else{let y=a?.length||0,h=Vt(e,g,i,c,a,r-u);h.skipped?(d.length||(m+=h.skipped),u+=h.skipped):h.data&&a===h.data?u+=h.data.length-y:h.data&&h.data.length&&(p?.(),d.push(h.data),u+=h.data.length,a=h.data)}}return p?.(),{data:d,skipped:m}}function Vt(e,t,r,n,i,o){let{type:f,element:s,schemaPath:l,codec:d,compressors:c}=r,a=new Uint8Array(e.view.buffer,e.view.byteOffset+e.offset,t.compressed_page_size);if(e.offset+=t.compressed_page_size,t.type==="DATA_PAGE"){let u=t.data_page_header;if(!u)throw new Error("parquet data page header is undefined");if(o>u.num_values&&Ce(l))return{skipped:u.num_values};let m=ve(a,Number(t.uncompressed_page_size),d,c),{definitionLevels:p,repetitionLevels:g,dataPage:y}=Gt(m,u,r),h=Pe(y,n,u.encoding,r),_=Array.isArray(i)?i:[];return{skipped:0,data:He(_,p,g,h,l)}}else if(t.type==="DATA_PAGE_V2"){let u=t.data_page_header_v2;if(!u)throw new Error("parquet data page header v2 is undefined");if(o>u.num_rows)return{skipped:u.num_values};let{definitionLevels:m,repetitionLevels:p,dataPage:g}=jt(a,t,r),y=Pe(g,n,u.encoding,r),h=Array.isArray(i)?i:[];return{skipped:0,data:He(h,m,p,y,l)}}else if(t.type==="DICTIONARY_PAGE"){let u=t.dictionary_page_header;if(!u)throw new Error("parquet dictionary page header is undefined");let m=ve(a,Number(t.uncompressed_page_size),d,c),p={view:new DataView(m.buffer,m.byteOffset,m.byteLength),offset:0};return{skipped:0,data:se(p,f,u.num_values,s.type_length)}}else throw new Error(`parquet unsupported page type: ${t.type}`)}function Gn(e){let t=N(e),r=de[t.field_1],n=t.field_2,i=t.field_3,o=t.field_4,f=t.field_5&&{num_values:t.field_5.field_1,encoding:O[t.field_5.field_2],definition_level_encoding:O[t.field_5.field_3],repetition_level_encoding:O[t.field_5.field_4],statistics:t.field_5.field_5&&{max:t.field_5.field_5.field_1,min:t.field_5.field_5.field_2,null_count:t.field_5.field_5.field_3,distinct_count:t.field_5.field_5.field_4,max_value:t.field_5.field_5.field_5,min_value:t.field_5.field_5.field_6}},s=t.field_6,l=t.field_7&&{num_values:t.field_7.field_1,encoding:O[t.field_7.field_2],is_sorted:t.field_7.field_3},d=t.field_8&&{num_values:t.field_8.field_1,num_nulls:t.field_8.field_2,num_rows:t.field_8.field_3,encoding:O[t.field_8.field_4],definition_levels_byte_length:t.field_8.field_5,repetition_levels_byte_length:t.field_8.field_6,is_compressed:t.field_8.field_7===void 0?!0:t.field_8.field_7,statistics:t.field_8.field_8};return{type:r,uncompressed_page_size:n,compressed_page_size:i,crc:o,data_page_header:f,index_page_header:s,dictionary_page_header:l,data_page_header_v2:d}}function Wt(e,{metadata:t},r){let n=[];for(let i of r.chunks){let{path_in_schema:o}=i.columnMetadata,f=_e(t.schema,o),s={pathInSchema:o,element:f[f.length-1].element,schemaPath:f,...e,...i.columnMetadata,parsers:{...M,...e.parsers}},{startByte:l,endByte:d}=i.range;"pageLocations"in i?n.push({pathInSchema:o,data:zt(e,r,i,i.pageLocations,s)}):"offsetIndex"in i?n.push({pathInSchema:o,data:Promise.resolve(e.file.slice(i.offsetIndex.startByte,i.offsetIndex.endByte)).then(c=>{let a=ie({view:new DataView(c),offset:0}).page_locations;return zt(e,r,i,a,s)})}):n.push({pathInSchema:o,data:Promise.resolve(e.file.slice(l,d)).then(c=>{let a={view:new DataView(c),offset:0};return Je(a,r,s,e.onPage)})})}return{groupStart:r.groupStart,groupRows:r.groupRows,selectStart:r.selectStart,selectEnd:r.selectEnd,asyncColumns:n}}async function zt(e,t,r,n,i){let{data_page_offset:o,dictionary_page_offset:f}=r.columnMetadata,{selectStart:s,selectEnd:l}=t,{startByte:d,endByte:c}=r.range,a=-1,u=f||o<n[0].offset;for(let _=0;_<n.length;_++){let w=n[_],A=Number(w.first_row_index),I=_+1<n.length?Number(n[_+1].first_row_index):t.groupRows;a<0&&I>s&&(d=Number(w.offset),a=A),A<l&&(c=Number(w.offset)+w.compressed_page_size)}a<0&&(a=0);let m;if(u&&a){let _=Number(n[0].offset)-r.range.startByte,[w,A]=await Promise.all([e.file.slice(r.range.startByte,Number(n[0].offset)),e.file.slice(d,c)]),I=new Uint8Array(_+A.byteLength);I.set(new Uint8Array(w,0,_)),I.set(new Uint8Array(A),_),m=new DataView(I.buffer)}else u?m=new DataView(await e.file.slice(r.range.startByte,c)):m=new DataView(await e.file.slice(d,c));let p={view:m,offset:0},g=a?{...t,groupStart:t.groupStart+a,selectStart:t.selectStart-a,selectEnd:t.selectEnd-a}:t,{data:y,skipped:h}=Je(p,g,i,e.onPage);return{data:y,skipped:a+h}}async function Qe({asyncColumns:e},t,r,n,i){let o=await Promise.all(e.map(a=>a.data.then(({skipped:u,data:m})=>({skipped:u,data:Ge(m)})))),f=r-t;if(i==="object"){let a=Array(f);for(let u=0;u<f;u++){let m={};for(let p=0;p<e.length;p++){let{data:g,skipped:y}=o[p];m[e[p].pathInSchema[0]]=g[t+u-y]}a[u]=m}return a}let s=e.map(a=>a.pathInSchema[0]).filter(a=>!n||n.includes(a)),l=n??s,d=l.map(a=>e.findIndex(u=>u.pathInSchema[0]===a)),c=Array(f);for(let a=0;a<f;a++){let u=Array(e.length);for(let m=0;m<l.length;m++){let p=d[m];if(p<0)throw new Error(`parquet column not found: ${l[m]}`);let{data:g,skipped:y}=o[p];u[m]=g[t+a-y]}c[a]=u}return c}function Xe(e,t,r){let{asyncColumns:n}=e,i={...M,...r},o=[];for(let f of t.children)if(f.children.length){let s=n.filter(l=>l.pathInSchema[0]===f.element.name);if(!s.length)continue;o.push({pathInSchema:f.path,data:(async()=>{let l=await Promise.all(s.map(p=>p.data)),d=new Map,c=l.map(({data:p})=>Ge(p)),a=Math.max(e.selectStart??0,...l.map(p=>p.skipped)),u=Math.min(e.selectEnd??1/0,...l.map((p,g)=>p.skipped+c[g].length));for(let p=0;p<s.length;p++){let g=a-l[p].skipped,y=Math.max(0,u-a);d.set(s[p].pathInSchema.join("."),c[p].slice(g,g+y))}X(d,f,i);let m=d.get(f.element.name);if(!m)throw new Error("parquet column data not assembled");return{data:[m],skipped:a}})()})}else{let s=n.find(l=>l.pathInSchema[0]===f.element.name);s&&o.push(s)}return{...e,asyncColumns:o}}async function Ht(e){let t=await jn(e);return{options:t,plan:St(t)}}async function jn(e){let t=e.metadata??await G(e.file,e),r=R(t).children.map(f=>f.element.name),i=Ae(e.filter).filter(f=>!r.includes(f));if(i.length)throw new Error(`parquet filter columns not found: ${i.join(", ")}`);if(e.columns){let f=e.columns.filter(s=>!r.includes(s));if(f.length)throw new Error(`parquet column not found: ${f[0]}`)}let o={...e,metadata:t};return o=await Vn(o),o=await zn(o),o}function Kt(e,t){let r={...e,file:je(e.file,t)};return t.groups.map(n=>Wt(r,t,n))}async function Vn(e){if(!e.useBloomFilters||!e.filter||!e.metadata)return e;let t=R(e.metadata),r={};for(let i of t.children)r[i.element.name]=i.element;let n=await Ot({file:e.file,metadata:e.metadata,filter:e.filter,filterStrict:e.filterStrict});return{...e,bloomFiltersByGroup:n,schemaElements:r}}async function zn(e){if(!e.usePageIndex||!e.filter||!e.metadata)return e;let{pageRangesByGroup:t,pageLocationsByGroup:r}=await Mt({file:e.file,metadata:e.metadata,filter:e.filter,filterStrict:e.filterStrict,rowStart:e.rowStart,rowEnd:e.rowEnd,columns:e.columns,bloomFiltersByGroup:e.bloomFiltersByGroup,schemaElements:e.schemaElements,parsers:e.parsers});return{...e,pageRangesByGroup:t,pageLocationsByGroup:r}}var Zt=Symbol("rowIndex");async function Re(e){e.metadata??(e.metadata=await G(e.file,e));let{rowStart:t=0,rowEnd:r,columns:n,onChunk:i,onComplete:o,rowFormat:f,filter:s,filterStrict:l=!0}=e;if(s&&f!=="object")throw new Error('parquet filter requires rowFormat: "object"');if(e.includeRowIndex&&f!=="object")throw new Error('parquet includeRowIndex requires rowFormat: "object"');let d=Ae(s),c=n;if(n&&d.length){let _=new Set(n),w=d.filter(A=>!_.has(A));w.length&&(c=[...n,...w])}let a=c===n?e:{...e,columns:c},u=await Ht(a),m=u.options,p=c!==n,g=Kt(m,u.plan);if(!o&&!i){await et(g);return}if(!m.metadata)throw new Error("parquet requires metadata");let y=R(m.metadata),h=g.map(_=>Xe(_,y,e.parsers));if(i)for(let _ of h)for(let w of _.asyncColumns)w.data.then(({data:A,skipped:I})=>{let x=_.groupStart+I;for(let E of A)i({columnName:w.pathInSchema[0],columnData:E,rowStart:x,rowEnd:x+E.length}),x+=E.length},()=>{});if(o){await et(h);let _=[];for(let w of h){let A=w.selectStart??Math.max(t-w.groupStart,0),I=w.selectEnd??Math.min((r??1/0)-w.groupStart,w.groupRows),x=f==="object"?await Qe(w,A,I,c,"object"):await Qe(w,A,I,n,"array");if(e.includeRowIndex)for(let E=0;E<x.length;E++)Object.defineProperty(x[E],Zt,{value:w.groupStart+A+E});if(s){for(let E of x)if(F(E,s,l)){if(p&&n)for(let L of d)n.includes(L)||delete E[L];_.push(E)}}else Ye(_,x)}o(_)}else await et(h)}async function et(e){let t=e.flatMap(i=>i.asyncColumns.map(o=>o.data)),n=(await Promise.allSettled(t)).find(i=>i.status==="rejected");if(n)throw n.reason}function tt(e){return new Promise((t,r)=>{Re({...e,rowFormat:"object",onComplete:t}).catch(r)})}return fn(Wn);})();
+return hyparquet;
+}
 
 /* ------------------- Config ------------------- */
 
@@ -24,8 +27,11 @@ const TAU = Math.PI * 2;
 
 const MIN_PX_YEAR = 2;
 const MAX_PX_YEAR = 50000;
-const MIN_ROW = 0.05;
+const MIN_ROW = 0.0001;
 const MAX_ROW = 32;
+const MAX_PLOT_H = 15000000;
+const DENSE_ROW_H = 1;
+const DENSE_STACK = 16;
 const MAX_CANVAS_DIM = 16000;
 const AXIS_H = 40;
 const OVERVIEW_H = 72;
@@ -361,6 +367,9 @@ const cssToken = name =>
 const LAUREL = cssToken("--laurel");
 const SEAWEED = cssToken("--seaweed");
 const LIVE = cssToken("--live");
+const rgbOf = token => token.split(",").map(Number);
+const LAUREL_RGB = rgbOf(LAUREL);
+const LIVE_RGB = rgbOf(LIVE);
 const SANS = getComputedStyle(document.body).fontFamily;
 const FONT_SM = `11px ${SANS}`;
 
@@ -423,6 +432,21 @@ const ink = alpha => `rgba(${LAUREL},${alpha})`;
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 const pad2 = n => String(n).padStart(2, "0");
 const bump = (map, key) => map.set(key, (map.get(key) || 0) + 1);
+const maxOf = (values, initial = -Infinity) => {
+  let max = initial;
+  for (const value of values) if (value > max) max = value;
+  return max;
+};
+const lowerBound = (sorted, value) => {
+  let lo = 0;
+  let hi = sorted.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (sorted[mid] < value) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+};
 
 const toWayback = ms => {
   const d = new Date(ms);
@@ -464,7 +488,7 @@ const formatSpan = ms => {
 
 const median = nums => {
   if (!nums.length) return 0;
-  const sorted = [...nums].sort((a, b) => a - b);
+  const sorted = Float64Array.from(nums).sort();
   const mid = sorted.length >> 1;
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 };
@@ -607,9 +631,9 @@ const mementoURL = (resolved, ts, url, mode = "no_toolbar") => {
   return `https://web.archive.org/web/${datetime}${suffix}/${targetURL(url)}`;
 };
 
-/* ------------------- Pluto ingest ------------------- */
+/* ------------------- Pluto ingest (worker) ------------------- */
 
-const Pluto = (() => {
+const plutoIngest = hyparquet => {
   const ALIVE_STATES = new Set(["S0", "S1", "S2"]);
   const TABLE_PATTERNS = {
     urls: /(^|\/)urls\/[^/]+\.parquet$/i,
@@ -617,57 +641,466 @@ const Pluto = (() => {
     events: /(^|\/)events\/[^/]+\.parquet$/i,
   };
   const SUMMARY_PATTERN = /(^|\/)summary\.parquet$/i;
-  const REGISTRY_PATTERN = /(^|\/)registry\/([^/]+)\/web-archive\.txt$/i;
 
-  const bareId = id => (id || "").replace(/^archive:/i, "").toLowerCase();
-  const stripScheme = url => (url || "").replace(/^https?:\/\//i, "");
-  const summaryArchive = row => row.last_archive || row.first_archive || null;
+  const COLUMNS = {
+    summary: [
+      "url_id",
+      "original_url",
+      "current_state",
+      "first_appearance",
+      "last_appearance",
+      "n_captures",
+      "first_archive",
+      "last_archive",
+    ],
+    urls: ["url_id", "original_url", "canonical_url"],
+    captures: ["url_id", "archive", "capture_time", "memento_url"],
+    events: ["url_id", "event_type", "event_end"],
+  };
+
+  const PARSERS = {
+    timestampFromMilliseconds: value => Number(value),
+    timestampFromMicroseconds: value => Number(value) / 1e3,
+    timestampFromNanoseconds: value => Number(value) / 1e6,
+  };
 
   const toMs = value => {
     if (value == null) return null;
-    const ms = (
-      value instanceof Date
+    const ms =
+      typeof value === "number"
         ? value
-        : new Date(typeof value === "bigint" ? Number(value) : value)
-    ).getTime();
+        : (value instanceof Date
+            ? value
+            : new Date(typeof value === "bigint" ? Number(value) : value)
+          ).getTime();
     return Number.isNaN(ms) ? null : ms;
   };
 
-  const readRows = async file => {
-    return hyparquet.parquetReadObjects({ file: await file.arrayBuffer() });
+  const monthIndex = ms => {
+    const days = Math.floor(ms / 86400000) + 719468;
+    const era = Math.floor(days / 146097);
+    const doe = days - era * 146097;
+    const yoe = Math.floor(
+      (doe -
+        Math.floor(doe / 1460) +
+        Math.floor(doe / 36524) -
+        Math.floor(doe / 146096)) /
+        365
+    );
+    const doy = doe - (365 * yoe + Math.floor(yoe / 4) - Math.floor(yoe / 100));
+    const mp = Math.floor((5 * doy + 2) / 153);
+    const month = mp < 10 ? mp + 2 : mp - 10;
+    const year = yoe + era * 400 + (month < 2 ? 1 : 0);
+    return year * 12 + month;
   };
 
-  const readAll = async files => {
-    return (await Promise.all(files.map(readRows))).flat();
+  const openParquet = async (file, wanted) => {
+    const buffer = await file.arrayBuffer();
+    const metadata = hyparquet.parquetMetadata(buffer);
+    const present = new Set(metadata.schema.map(element => element.name));
+    const columns = wanted.filter(name => present.has(name));
+    return { buffer, metadata, columns };
+  };
+
+  const readColumns = async (file, wanted) => {
+    const { buffer, metadata, columns } = await openParquet(file, wanted);
+    const length = Number(metadata.num_rows);
+    const data = Object.fromEntries(
+      wanted.map(name => [name, new Array(length).fill(null)])
+    );
+    await hyparquet.parquetRead({
+      file: buffer,
+      metadata,
+      columns,
+      parsers: PARSERS,
+      onChunk: ({ columnName, columnData, rowStart }) => {
+        const out = data[columnName];
+        for (let i = 0; i < columnData.length; i++)
+          out[rowStart + i] = columnData[i];
+      },
+    });
+    return { length, data };
+  };
+
+  const readAllColumns = async (files, wanted) => {
+    return Promise.all(files.map(file => readColumns(file, wanted)));
   };
 
   const classify = entries => {
     const tables = { urls: [], captures: [], events: [] };
-    const registry = new Map();
     let summary = null;
-    let matched = false;
-
-    for (const { path, file } of entries) {
+    for (const entry of entries) {
       const table = Object.keys(TABLE_PATTERNS).find(name =>
-        TABLE_PATTERNS[name].test(path)
+        TABLE_PATTERNS[name].test(entry.path)
       );
-      const registryMatch = path.match(REGISTRY_PATTERN);
-      if (table) tables[table].push(file);
-      else if (SUMMARY_PATTERN.test(path)) summary = file;
-      else if (registryMatch)
-        registry.set(registryMatch[2].toLowerCase(), file);
-      else continue;
-      matched = true;
+      if (table) tables[table].push(entry);
+      else if (SUMMARY_PATTERN.test(entry.path)) summary = entry;
     }
-    return { tables, summary, registry, matched };
+    return { tables, summary };
   };
 
-  const archiveNames = async (ids, registryFiles) => {
+  const indexer = () => {
+    const index = new Map();
+    const values = [];
+    const of = value => {
+      let i = index.get(value);
+      if (i === undefined) {
+        i = values.length;
+        index.set(value, i);
+        values.push(value);
+      }
+      return i;
+    };
+    return { of, values };
+  };
+
+  const summaryPayload = summary => {
+    const { length, data } = summary;
+    const archives = indexer();
+    const keep = [];
+    for (let i = 0; i < length; i++) {
+      if (
+        toMs(data.first_appearance[i]) !== null &&
+        toMs(data.last_appearance[i]) !== null
+      )
+        keep.push(i);
+    }
+    const n = keep.length;
+    const payload = {
+      rows: n,
+      urls: new Array(n),
+      urlIds: new Array(n),
+      url: new Uint32Array(n),
+      archive: new Uint16Array(n),
+      first: new Float64Array(n),
+      last: new Float64Array(n),
+      captures: new Uint32Array(n),
+      live: new Uint8Array(n),
+      hasMementos: false,
+    };
+    keep.forEach((i, r) => {
+      payload.urls[r] = data.original_url[i] || "";
+      payload.urlIds[r] = data.url_id[i] || "";
+      payload.url[r] = r;
+      payload.archive[r] = archives.of(
+        data.last_archive[i] || data.first_archive[i] || ""
+      );
+      payload.first[r] = toMs(data.first_appearance[i]);
+      payload.last[r] = toMs(data.last_appearance[i]);
+      payload.captures[r] = Number(data.n_captures[i] ?? 0);
+      payload.live[r] = ALIVE_STATES.has(data.current_state[i]) ? 1 : 0;
+    });
+    payload.archives = archives.values;
+    return payload;
+  };
+
+  const statesFromSummary = summary => {
+    const states = new Map();
+    const { length, data } = summary;
+    for (let i = 0; i < length; i++)
+      states.set(data.url_id[i], data.current_state[i]);
+    return states;
+  };
+
+  const statesFromEvents = tables => {
+    const latest = new Map();
+    let checkedMs = null;
+    for (const { length, data } of tables) {
+      for (let i = 0; i < length; i++) {
+        const type = data.event_type[i];
+        if (!type?.startsWith("state_")) continue;
+        const endMs = toMs(data.event_end[i]) ?? -Infinity;
+        if (Number.isFinite(endMs) && endMs > (checkedMs ?? -Infinity))
+          checkedMs = endMs;
+        const prev = latest.get(data.url_id[i]);
+        if (!prev || endMs >= prev.endMs)
+          latest.set(data.url_id[i], { endMs, state: type.slice(6) });
+      }
+    }
+    const states = new Map(
+      [...latest].map(([urlId, { state }]) => [urlId, state])
+    );
+    states.checkedMs = checkedMs;
+    return states;
+  };
+
+  const capturesPayload = (urlTables, captureTables, states) => {
+    const urls = indexer();
+    const originals = [];
+    for (const { length, data } of urlTables) {
+      for (let i = 0; i < length; i++) {
+        const u = urls.of(data.url_id[i]);
+        originals[u] = data.original_url[i] || data.canonical_url[i] || "";
+      }
+    }
+
+    const archives = indexer();
+    const rowKeys = new Map();
+    const rowUrl = [];
+    const rowArchive = [];
+    const rowCaptures = [];
+    const rowMementos = [];
+    let total = 0;
+    for (const { length } of captureTables) total += length;
+    const captureRow = new Int32Array(total);
+    const captureTime = new Float64Array(total);
+    const overrideAt = [];
+    const overrideUrl = [];
+
+    let k = 0;
+    let lastId = null;
+    let lastArchive = null;
+    let u = -1;
+    let a = -1;
+    let r = -1;
+    for (const { length, data } of captureTables) {
+      const { url_id: ids, archive: archiveIds } = data;
+      const { capture_time: times, memento_url: mementoUrls } = data;
+      for (let i = 0; i < length; i++, k++) {
+        const id = ids[i];
+        const archive = archiveIds[i] || "";
+        if (u < 0 || id !== lastId) {
+          lastId = id;
+          u = urls.of(id);
+          if (originals[u] === undefined) originals[u] = "";
+          r = -1;
+        }
+        if (a < 0 || archive !== lastArchive) {
+          lastArchive = archive;
+          a = archives.of(archive);
+          r = -1;
+        }
+        if (r < 0) {
+          const key = u * 65536 + a;
+          r = rowKeys.get(key);
+          if (r === undefined) {
+            r = rowUrl.length;
+            rowKeys.set(key, r);
+            rowUrl.push(u);
+            rowArchive.push(a);
+            rowCaptures.push(0);
+            rowMementos.push(0);
+          }
+        }
+        rowCaptures[r]++;
+        const ms = toMs(times[i]);
+        if (ms === null) {
+          captureRow[k] = -1;
+          continue;
+        }
+        captureRow[k] = r;
+        captureTime[k] = ms;
+        rowMementos[r]++;
+        const url = mementoUrls[i];
+        if (url && url !== originals[u]) {
+          overrideAt.push(k);
+          overrideUrl.push(url);
+        }
+      }
+    }
+
+    const rowCount = rowUrl.length;
+    const start = new Uint32Array(rowCount + 1);
+    for (let r = 0; r < rowCount; r++) start[r + 1] = start[r] + rowMementos[r];
+    const fill = start.slice(0, rowCount);
+    const times = new Float64Array(start[rowCount]);
+    const override = new Map();
+    let o = 0;
+    for (let c = 0; c < total; c++) {
+      const r = captureRow[c];
+      if (r < 0) continue;
+      const pos = fill[r]++;
+      times[pos] = captureTime[c];
+      if (o < overrideAt.length && overrideAt[o] === c)
+        override.set(pos, overrideUrl[o++]);
+    }
+
+    for (let r = 0; r < rowCount; r++) {
+      const s = start[r];
+      const e = start[r + 1];
+      let sorted = true;
+      for (let i = s + 1; i < e; i++)
+        if (times[i] < times[i - 1]) {
+          sorted = false;
+          break;
+        }
+      if (sorted) continue;
+      let overridden = false;
+      if (override.size)
+        for (let i = s; i < e && !overridden; i++) overridden = override.has(i);
+      if (!overridden) {
+        times.subarray(s, e).sort();
+        continue;
+      }
+      const order = [];
+      for (let i = s; i < e; i++) order.push(i);
+      order.sort((a, b) => times[a] - times[b] || a - b);
+      const t = order.map(i => times[i]);
+      const u = order.map(i => override.get(i));
+      for (let i = s; i < e; i++) {
+        times[i] = t[i - s];
+        if (u[i - s] === undefined) override.delete(i);
+        else override.set(i, u[i - s]);
+      }
+    }
+
+    const kept = [];
+    for (let r = 0; r < rowCount; r++) if (rowMementos[r]) kept.push(r);
+    const n = kept.length;
+    const payload = {
+      rows: n,
+      urls: originals,
+      urlIds: urls.values,
+      url: new Uint32Array(n),
+      archive: new Uint16Array(n),
+      first: new Float64Array(n),
+      last: new Float64Array(n),
+      captures: new Uint32Array(n),
+      mStart: new Uint32Array(n),
+      mEnd: new Uint32Array(n),
+      live: new Uint8Array(urls.values.length),
+      archives: archives.values,
+      hasMementos: true,
+      times,
+      collectedMs: states.checkedMs ?? null,
+    };
+    kept.forEach((r, i) => {
+      payload.url[i] = rowUrl[r];
+      payload.archive[i] = rowArchive[r];
+      payload.captures[i] = rowCaptures[r];
+      payload.mStart[i] = start[r];
+      payload.mEnd[i] = start[r + 1];
+      payload.first[i] = times[start[r]];
+      payload.last[i] = times[start[r + 1] - 1];
+    });
+    urls.values.forEach((id, u) => {
+      payload.live[u] = ALIVE_STATES.has(states.get(id)) ? 1 : 0;
+    });
+
+    const positions = [...override.keys()].sort((a, b) => a - b);
+    payload.overrideAt = Uint32Array.from(positions);
+    payload.overrideUrl = positions.map(pos => override.get(pos));
+
+    const months = new Map();
+    for (let i = 0; i < times.length; i++) {
+      const m = monthIndex(times[i]);
+      months.set(m, (months.get(m) || 0) + 1);
+    }
+    payload.months = Int32Array.from(months.keys());
+    payload.monthCounts = Uint32Array.from(months.values());
+    return payload;
+  };
+
+  const transferables = payload =>
+    Object.values(payload)
+      .filter(value => ArrayBuffer.isView(value))
+      .map(view => view.buffer);
+
+  const ingest = async (request, emit) => {
+    const send = (type, payload) =>
+      emit({ type, payload }, payload ? transferables(payload) : []);
+
+    if (request.kind === "file") {
+      const summary = await readColumns(request.file, COLUMNS.summary);
+      if (!summary.length || summary.data.current_state.every(v => v == null))
+        throw new Error(
+          "This .parquet file doesn't look like a Pluto summary.parquet (expected columns like " +
+            "url_id and current_state). For full per-archive detail, choose Pluto's whole " +
+            "results folder instead."
+        );
+      return send("full", summaryPayload(summary));
+    }
+
+    const remote = request.kind === "remote";
+    const entries = remote
+      ? request.paths.map(path => ({ path, file: null }))
+      : request.entries;
+    const load = async entry => {
+      if (entry.file) return entry.file;
+      const res = await fetch(request.base + entry.path);
+      if (!res.ok) throw new Error(`${entry.path} responded ${res.status}`);
+      return res.blob();
+    };
+    const loadAll = list => {
+      const files = Promise.all(list.map(load));
+      files.catch(() => {});
+      return files;
+    };
+
+    const { tables, summary: summaryEntry } = classify(entries);
+    if (!tables.captures.length && !summaryEntry) return send("none");
+
+    emit({
+      type: "progress",
+      label: remote ? "Downloading" : "Reading summary",
+    });
+    const summaryFile = summaryEntry ? await load(summaryEntry) : null;
+    const pending = tables.captures.length
+      ? {
+          urls: loadAll(tables.urls),
+          captures: loadAll(tables.captures),
+          events: loadAll(tables.events),
+        }
+      : null;
+    const summary = summaryFile
+      ? await readColumns(summaryFile, COLUMNS.summary)
+      : null;
+    if (!pending) return send("full", summaryPayload(summary));
+    if (summary?.length) send("summary", summaryPayload(summary));
+
+    emit({ type: "progress", label: "Reading captures" });
+    const [urlTables, captureTables] = await Promise.all([
+      pending.urls.then(files => readAllColumns(files, COLUMNS.urls)),
+      pending.captures.then(files => readAllColumns(files, COLUMNS.captures)),
+    ]);
+    let states = summary ? statesFromSummary(summary) : new Map();
+    if (!states.size && tables.events.length)
+      states = statesFromEvents(
+        await readAllColumns(await pending.events, COLUMNS.events)
+      );
+
+    emit({ type: "progress", label: "Arranging captures" });
+    const payload = capturesPayload(urlTables, captureTables, states);
+    if (payload.rows) return send("full", payload);
+    return send("full", summary ? summaryPayload(summary) : null);
+  };
+
+  return { ingest };
+};
+
+/* ------------------- Pluto ingest ------------------- */
+
+const Pluto = (() => {
+  const PLUTO_PATTERNS = [
+    /(^|\/)urls\/[^/]+\.parquet$/i,
+    /(^|\/)captures\/[^/]+\.parquet$/i,
+    /(^|\/)events\/[^/]+\.parquet$/i,
+    /(^|\/)summary\.parquet$/i,
+  ];
+  const REGISTRY_PATTERN = /(^|\/)registry\/([^/]+)\/web-archive\.txt$/i;
+
+  const bareId = id => (id || "").replace(/^archive:/i, "").toLowerCase();
+  const stripScheme = url => (url || "").replace(/^https?:\/\//i, "");
+
+  const isRegistryFile = path => REGISTRY_PATTERN.test(path);
+  const isPlutoFile = path =>
+    PLUTO_PATTERNS.some(pattern => pattern.test(path)) || isRegistryFile(path);
+
+  const registryFiles = entries => {
+    const registry = new Map();
+    for (const { path, file } of entries) {
+      const match = path.match(REGISTRY_PATTERN);
+      if (match) registry.set(match[2].toLowerCase(), file);
+    }
+    return registry;
+  };
+
+  const archiveNames = async (ids, registry) => {
     const names = new Map();
     await Promise.all(
       [...new Set(ids)].filter(Boolean).map(async id => {
         const key = bareId(id);
-        const localFile = registryFiles.get(key);
+        const localFile = registry.get(key);
         let name = null;
         if (localFile) {
           try {
@@ -681,163 +1114,122 @@ const Pluto = (() => {
     return names;
   };
 
-  const statesFromSummary = rows => {
-    return new Map(rows.map(row => [row.url_id, row.current_state]));
-  };
-
-  const statesFromEvents = rows => {
-    const latest = new Map();
-    let checkedMs = null;
-    for (const event of rows) {
-      if (!event.event_type?.startsWith("state_")) continue;
-      const endMs = toMs(event.event_end) ?? -Infinity;
-      if (Number.isFinite(endMs) && endMs > (checkedMs ?? -Infinity))
-        checkedMs = endMs;
-      const prev = latest.get(event.url_id);
-      if (!prev || endMs >= prev.endMs)
-        latest.set(event.url_id, { endMs, state: event.event_type.slice(6) });
-    }
-    const states = new Map(
-      [...latest].map(([urlId, { state }]) => [urlId, state])
-    );
-    states.checkedMs = checkedMs;
-    return states;
-  };
-
-  const rowsFromCaptures = (urlRows, captureRows, states, names) => {
-    const originals = new Map(
-      urlRows.map(u => [u.url_id, u.original_url || u.canonical_url || ""])
-    );
-    const groups = new Map();
-    for (const capture of captureRows) {
-      const key = `${capture.url_id}\u0000${capture.archive}`;
-      if (!groups.has(key)) groups.set(key, []);
-      groups.get(key).push(capture);
-    }
-
-    const rows = [];
-    for (const captures of groups.values()) {
-      const { url_id: urlId, archive } = captures[0];
-      const original = originals.get(urlId) || "";
-      const archiveId = bareId(archive);
-      const archiveName =
-        names.get(archive) || (archiveId || "Unspecified").toUpperCase();
-      const mementos = captures
-        .map(c => ({
-          ms: toMs(c.capture_time),
-          url: c.memento_url || original,
-        }))
-        .filter(m => m.ms !== null)
-        .sort((a, b) => a.ms - b.ms)
-        .map(m => ({
-          ...m,
-          ts: toWayback(m.ms),
-          archive: archiveName,
-          archiveId,
-        }));
-      if (!mementos.length) continue;
-
-      rows.push({
-        host: stripScheme(original) || urlId,
-        url: original,
-        firstMs: mementos[0].ms,
-        lastMs: mementos[mementos.length - 1].ms,
-        captures: captures.length,
-        live: ALIVE_STATES.has(states.get(urlId)),
-        archive: archiveName,
+  const hostsFromPayload = (payload, names) => {
+    const { rows, urls, urlIds, url, archive, first, last, captures, live } =
+      payload;
+    const sources = payload.archives.map(raw => {
+      const archiveId = bareId(raw);
+      return {
+        name:
+          names.get(raw) ||
+          (archiveId ? archiveId.toUpperCase() : "Unspecified"),
         archiveId,
-        mementos,
-      });
+      };
+    });
+    const list = new Array(rows);
+    for (let i = 0; i < rows; i++) {
+      const u = url[i];
+      const original = urls[u] || "";
+      const host = stripScheme(original) || urlIds[u] || "";
+      const source = sources[archive[i]];
+      list[i] = {
+        id: i,
+        host,
+        url: original,
+        firstMs: first[i],
+        lastMs: last[i],
+        captures: captures[i],
+        live: live[u] === 1,
+        archive: source.name,
+        archiveId: source.archiveId,
+        key: host.toLowerCase(),
+        inkWeight: inkWeightFor(captures[i]),
+        row: null,
+        scope: "",
+        archives: null,
+        parts: null,
+        mStart: payload.hasMementos ? payload.mStart[i] : -1,
+        mEnd: payload.hasMementos ? payload.mEnd[i] : -1,
+        mementos: null,
+      };
     }
-    return rows;
+    return list;
   };
 
-  const rowsFromSummary = (summaryRows, names) => {
-    const rows = [];
-    for (const row of summaryRows) {
-      const firstMs = toMs(row.first_appearance);
-      const lastMs = toMs(row.last_appearance);
-      if (firstMs === null || lastMs === null) continue;
-      const archive = summaryArchive(row);
-      rows.push({
-        host: stripScheme(row.original_url || row.url_id),
-        url: row.original_url || "",
-        firstMs,
-        lastMs,
-        captures: Number(row.n_captures ?? 0),
-        live: ALIVE_STATES.has(row.current_state),
-        archive: archive
-          ? names.get(archive) || bareId(archive).toUpperCase()
-          : "Unspecified",
-        archiveId: bareId(archive),
-        mementos: [],
-      });
-    }
-    return rows;
-  };
+  let worker = null;
+  let workerURL = null;
+  let inline = null;
 
-  const loadFolder = async entries => {
-    const { tables, summary, registry, matched } = classify(entries);
-    if (!matched) return null;
-
-    const summaryRows = summary ? await readRows(summary) : null;
-    let states = summaryRows ? statesFromSummary(summaryRows) : new Map();
-
-    if (tables.captures.length) {
-      const [urlRows, captureRows] = await Promise.all([
-        readAll(tables.urls),
-        readAll(tables.captures),
-      ]);
-      if (!states.size && tables.events.length)
-        states = statesFromEvents(await readAll(tables.events));
-      const names = await archiveNames(
-        captureRows.map(c => c.archive),
-        registry
-      );
-      const rows = rowsFromCaptures(urlRows, captureRows, states, names);
-      rows.collectedMs = states.checkedMs ?? null;
-      if (rows.length) return rows;
-    }
-
-    if (summaryRows?.length) {
-      return rowsFromSummary(
-        summaryRows,
-        await archiveNames(summaryRows.map(summaryArchive), registry)
-      );
-    }
-    return [];
-  };
-
-  const loadFile = async file => {
-    if (!/\.parquet$/i.test(file.name || "")) return null;
-    const rows = await readRows(file);
-    if (
-      !rows.length ||
-      !("url_id" in rows[0]) ||
-      !("current_state" in rows[0])
-    ) {
-      throw new Error(
-        "This .parquet file doesn't look like a Pluto summary.parquet (expected columns like " +
-          "url_id and current_state). For full per-archive detail, use “Upload Folder” on " +
-          "Pluto's whole output folder instead."
-      );
-    }
-    return rowsFromSummary(
-      rows,
-      await archiveNames(rows.map(summaryArchive), new Map())
+  const workerSource = () => `const hyparquet = (${hyparquetLibrary})();
+const { ingest } = (${plutoIngest})(hyparquet);
+self.onmessage = async event => {
+  try {
+    await ingest(event.data, (message, transfer) =>
+      self.postMessage(message, transfer)
     );
-  };
+  } catch (err) {
+    self.postMessage({ type: "error", message: err.message || String(err) });
+  }
+};`;
 
-  const isPlutoFile = path => {
-    return (
-      Object.values(TABLE_PATTERNS).some(pattern => pattern.test(path)) ||
-      SUMMARY_PATTERN.test(path) ||
-      REGISTRY_PATTERN.test(path)
+  const startWorker = () => {
+    workerURL ||= URL.createObjectURL(
+      new Blob([workerSource()], { type: "text/javascript" })
     );
+    return new Worker(workerURL);
   };
 
-  return { loadFolder, loadFile, isPlutoFile };
+  const run = (request, onMessage) => {
+    worker?.terminate();
+    worker = null;
+    return new Promise((resolve, reject) => {
+      const handle = message => {
+        if (message.type === "error") return reject(new Error(message.message));
+        onMessage(message);
+        if (message.type === "full" || message.type === "none") resolve();
+      };
+      const runInline = () =>
+        Promise.resolve()
+          .then(() => {
+            inline ||= plutoIngest(hyparquetLibrary());
+            return inline.ingest(request, handle);
+          })
+          .catch(reject);
+      let started;
+      try {
+        started = startWorker();
+      } catch {
+        return runInline();
+      }
+      worker = started;
+      started.onmessage = event => {
+        const { type } = event.data;
+        if (type === "full" || type === "none" || type === "error") {
+          started.terminate();
+          if (worker === started) worker = null;
+        }
+        handle(event.data);
+      };
+      started.onerror = event => {
+        event.preventDefault();
+        started.terminate();
+        if (worker === started) worker = null;
+        runInline();
+      };
+      started.postMessage(request);
+    });
+  };
+
+  return {
+    isPlutoFile,
+    isRegistryFile,
+    registryFiles,
+    archiveNames,
+    hostsFromPayload,
+    run,
+  };
 })();
+
 /* ------------------- Data loading ------------------- */
 
 const listFromServer = async (dirURL, visited = new Set()) => {
@@ -888,114 +1280,294 @@ const listDataFiles = async dir => {
   return fromGitHub.length ? fromGitHub : ["summary.parquet"];
 };
 
+let ingestId = 0;
+let pendingData = null;
+let mementoStore = null;
+
+const setLoading = label => {
+  searchInput.placeholder = label ? `${label}…` : "Search";
+};
+
+const updateSearchPlaceholder = () => {
+  searchInput.placeholder = `Search (${visible.length.toLocaleString()} URLs)`;
+};
+
+const ingest = async (
+  request,
+  { upload = false, registry: extra = [] } = {}
+) => {
+  const id = ++ingestId;
+  const registry = Pluto.registryFiles(request.entries || extra);
+  let shown = false;
+  let recognised = false;
+  let chain = Promise.resolve();
+
+  const receive = async message => {
+    if (id !== ingestId) return;
+    if (message.type === "progress") return setLoading(message.label);
+    if (message.type === "none") return;
+    recognised = true;
+    const payload = message.payload;
+    if (!payload?.rows) return;
+    const names = await Pluto.archiveNames(payload.archives, registry);
+    if (id !== ingestId) return;
+    const data = {
+      list: Pluto.hostsFromPayload(payload, names),
+      store: payload.hasMementos
+        ? {
+            times: payload.times,
+            overrideAt: payload.overrideAt,
+            overrideUrl: payload.overrideUrl,
+          }
+        : null,
+      histogram: payload.months
+        ? { months: payload.months, counts: payload.monthCounts }
+        : null,
+      collectedMs: payload.collectedMs ?? null,
+    };
+    if (shown) return replaceData(data);
+    shown = true;
+    if (upload) {
+      searchInput.value = "";
+      placard.style.display = "none";
+      setViewMode("timeline-date");
+    }
+    applyData(data);
+    if (upload)
+      requestAnimationFrame(() =>
+        viewport.scrollTo({ left: 0, top: 0, behavior: "instant" })
+      );
+  };
+
+  await Pluto.run(request, message => {
+    chain = chain.then(() => receive(message));
+  });
+  await chain;
+  if (id !== ingestId) return;
+  if (!shown) updateSearchPlaceholder();
+  if (upload && !recognised)
+    alert(
+      "That doesn't look like Pluto data — choose Pluto's results folder, or drop its summary.parquet."
+    );
+  else if (upload && !shown) alert("No usable rows found in that folder.");
+};
+
 const loadDefaultData = async () => {
   try {
     const paths = await listDataFiles(DEFAULT_DATA_DIR);
-    const entries = await Promise.all(
-      paths.map(async path => {
-        const res = await fetch(DEFAULT_DATA_DIR + path);
+    const base = new URL(DEFAULT_DATA_DIR, location.href).href;
+    const registry = await Promise.all(
+      paths.filter(Pluto.isRegistryFile).map(async path => {
+        const res = await fetch(base + path);
         if (!res.ok) throw new Error(`${path} responded ${res.status}`);
-        return {
-          path,
-          file: new File([await res.blob()], path.split("/").pop()),
-        };
+        return { path, file: new File([await res.blob()], "web-archive.txt") };
       })
     );
-    const rows = await Pluto.loadFolder(entries);
-    if (rows?.length) applyHostRows(rows);
+    await ingest(
+      {
+        kind: "remote",
+        base,
+        paths: paths.filter(path => !Pluto.isRegistryFile(path)),
+      },
+      { registry }
+    );
   } catch (err) {
     console.error("Could not load the default Pluto data:", err);
   }
 };
 
-const applyHostRows = rows => {
-  hosts = rows.map((row, id) => ({
-    id,
-    host: row.host,
-    firstMs: row.firstMs,
-    lastMs: row.lastMs,
-    captures: row.captures,
-    live: row.live,
-    archive: row.archive,
-    mementos: row.mementos.length
-      ? row.mementos
-      : [row.firstMs, row.lastMs].map(ms => ({
-          ms,
-          ts: toWayback(ms),
-          archive: row.archive,
-          archiveId: row.archiveId,
-          url: row.url,
-        })),
-  }));
+const setData = ({ list, store, histogram, collectedMs: collected }) => {
+  hosts = list;
+  mementoStore = store;
+  sortedCache.clear();
+  chartCache.clear();
 
   stopIntro();
-  classifyScopes(hosts);
   mergedHosts = mergeByHost(hosts);
+  classifyScopes(mergedHosts);
   fullStart = Infinity;
   fullEnd = -Infinity;
   for (const host of hosts) {
     if (host.firstMs < fullStart) fullStart = host.firstMs;
     if (host.lastMs > fullEnd) fullEnd = host.lastMs;
   }
-  collectedMs = Math.max(fullEnd, rows.collectedMs ?? -Infinity);
+  collectedMs = Math.max(fullEnd, collected ?? -Infinity);
   fullEnd = collectedMs;
 
   buildArchiveFilter();
   buildScopeFilter();
-  buildOverviewData();
+  buildOverviewData(histogram);
   computeLabelReserve();
   computeVisible();
+  updateSearchPlaceholder();
+};
+
+const applyData = data => {
+  pendingData = null;
+  setData(data);
   fitInitialScale();
   layout();
   playIntro();
 };
 
+const replaceData = data => {
+  if (playingIntro && pendingIntro) return applyData(data);
+  if (playingIntro) {
+    pendingData = data;
+    updateSearchPlaceholder();
+    return;
+  }
+  pendingData = null;
+  const before = {
+    px: pxPerYear,
+    row: rowHeight,
+    left: viewport.scrollLeft,
+    top: viewport.scrollTop,
+    start: fullStart,
+    scopes: [...selectedScopes],
+    archives:
+      selectedArchives.size === allArchives.length
+        ? null
+        : [...selectedArchives],
+  };
+  setData(data);
+  selectScopes(before.scopes);
+  if (before.archives)
+    selectArchives(before.archives.filter(name => allArchives.includes(name)));
+  computeVisible();
+  updateSearchPlaceholder();
+  pxPerYear = before.px;
+  rowHeight = clamp(before.row, MIN_ROW, maxRowHeight(visible.length));
+  renderActiveView();
+  viewport.scrollLeft = before.left + (dateToX(before.start) - EDGE_PAD);
+  viewport.scrollTop = before.top;
+};
+
+const mementosOf = host => {
+  if (host.mementos) return host.mementos;
+  let list;
+  if (host.parts && host.parts.length > 1) {
+    list = [];
+    for (const part of host.parts)
+      for (const memento of mementosOf(part)) list.push(memento);
+    list.sort((a, b) => a.ms - b.ms);
+  } else if (host.parts) {
+    list = mementosOf(host.parts[0]);
+  } else if (host.mStart >= 0 && mementoStore) {
+    const { times, overrideAt, overrideUrl } = mementoStore;
+    let o = lowerBound(overrideAt, host.mStart);
+    list = [];
+    for (let k = host.mStart; k < host.mEnd; k++) {
+      let url = host.url;
+      if (o < overrideAt.length && overrideAt[o] === k) url = overrideUrl[o++];
+      list.push({
+        ms: times[k],
+        url,
+        archive: host.archive,
+        archiveId: host.archiveId,
+      });
+    }
+  } else {
+    list = [host.firstMs, host.lastMs].map(ms => ({
+      ms,
+      url: host.url,
+      archive: host.archive,
+      archiveId: host.archiveId,
+    }));
+  }
+  host.mementos = list;
+  return list;
+};
+
 const mergeByHost = rows => {
   const byHost = new Map();
   for (const row of rows) {
-    const merged = byHost.get(row.host);
-    if (!merged) {
-      byHost.set(row.host, {
-        ...row,
-        id: row.host,
-        archives: [row.archive],
-        mementos: [...row.mementos],
-      });
+    const group = byHost.get(row.host);
+    if (!group) byHost.set(row.host, row);
+    else if (Array.isArray(group)) group.push(row);
+    else byHost.set(row.host, [group, row]);
+  }
+  const merged = [];
+  for (const group of byHost.values()) {
+    if (!Array.isArray(group)) {
+      merged.push(group);
       continue;
     }
-    merged.firstMs = Math.min(merged.firstMs, row.firstMs);
-    merged.lastMs = Math.max(merged.lastMs, row.lastMs);
-    merged.captures += row.captures;
-    merged.live ||= row.live;
-    if (!merged.archives.includes(row.archive))
-      merged.archives.push(row.archive);
-    merged.mementos.push(...row.mementos);
+    const [first] = group;
+    const host = {
+      id: first.id,
+      host: first.host,
+      url: first.url,
+      firstMs: first.firstMs,
+      lastMs: first.lastMs,
+      captures: 0,
+      live: false,
+      archive: first.archive,
+      archiveId: first.archiveId,
+      key: first.key,
+      inkWeight: 0,
+      row: null,
+      scope: "",
+      archives: [],
+      parts: group,
+      mStart: -1,
+      mEnd: -1,
+      mementos: null,
+    };
+    for (const row of group) {
+      if (row.firstMs < host.firstMs) host.firstMs = row.firstMs;
+      if (row.lastMs > host.lastMs) host.lastMs = row.lastMs;
+      host.captures += row.captures;
+      host.live ||= row.live;
+      if (!host.archives.includes(row.archive)) host.archives.push(row.archive);
+    }
+    host.inkWeight = inkWeightFor(host.captures);
+    merged.push(host);
   }
-  const merged = [...byHost.values()];
-  for (const host of merged) host.mementos.sort((a, b) => a.ms - b.ms);
   return merged;
 };
 
-const buildOverviewData = () => {
-  const events = [];
+const utcMonth = ms => {
+  const days = Math.floor(ms / DAY_MS) + 719468;
+  const era = Math.floor(days / 146097);
+  const doe = days - era * 146097;
+  const yoe = Math.floor(
+    (doe -
+      Math.floor(doe / 1460) +
+      Math.floor(doe / 36524) -
+      Math.floor(doe / 146096)) /
+      365
+  );
+  const doy = doe - (365 * yoe + Math.floor(yoe / 4) - Math.floor(yoe / 100));
+  const mp = Math.floor((5 * doy + 2) / 153);
+  const month = mp < 10 ? mp + 2 : mp - 10;
+  return (yoe + era * 400 + (month < 2 ? 1 : 0)) * 12 + month;
+};
+
+const buildOverviewData = histogram => {
+  const daily = new Map();
   const monthly = new Map();
+  const shift = (day, delta) => daily.set(day, (daily.get(day) || 0) + delta);
   for (const host of mergedHosts) {
-    events.push(
-      { t: host.firstMs, delta: 1 },
-      { t: host.lastMs + 1, delta: -1 }
-    );
-    for (const memento of host.mementos) bump(monthly, memento.ts.slice(0, 6));
+    shift(Math.floor(host.firstMs / DAY_MS), 1);
+    shift(Math.floor(host.lastMs / DAY_MS) + 1, -1);
+    if (!histogram) {
+      bump(monthly, utcMonth(host.firstMs));
+      bump(monthly, utcMonth(host.lastMs));
+    }
   }
-  events.sort((a, b) => a.t - b.t);
+  if (histogram)
+    histogram.months.forEach((month, i) =>
+      monthly.set(month, histogram.counts[i])
+    );
 
   let count = 0;
-  populationCurve = events.map(({ t, delta }) => ({
-    t,
-    count: (count += delta),
-  }));
+  populationCurve = [...daily]
+    .sort((a, b) => a[0] - b[0])
+    .map(([day, delta]) => ({ t: day * DAY_MS, count: (count += delta) }));
   captureHistogram = [...monthly]
     .map(([key, total]) => ({
-      monthStart: new Date(+key.slice(0, 4), +key.slice(4, 6) - 1, 1).getTime(),
+      monthStart: new Date(Math.floor(key / 12), key % 12, 1).getTime(),
       count: total,
     }))
     .sort((a, b) => a.monthStart - b.monthStart);
@@ -1009,42 +1581,37 @@ const buildOverviewData = () => {
 
 const computeLabelReserve = () => {
   plotCtx.font = FONT_SM;
+  const longest = maxOf(
+    hosts.map(h => h.host.length),
+    0
+  );
+  const candidates = new Set();
+  for (const { host } of hosts) {
+    if (host.length >= longest * 0.8) candidates.add(host);
+    if (candidates.size >= 200) break;
+  }
   let widest = 0;
-  for (const name of new Set(hosts.map(h => h.host)))
+  for (const name of candidates)
     widest = Math.max(widest, plotCtx.measureText(name).width);
   labelReserve = widest + 35 + EDGE_PAD;
 };
 
-const loadUpload = async load => {
-  try {
-    const rows = await load();
-    if (!rows) return;
-    applyHostRows(rows);
-    resetView();
-  } catch (err) {
-    console.error("Could not load upload:", err);
-    alert(err.message || "Could not load that data.");
-  }
-};
-
 const loadEntries = entries => {
   if (!entries.length) return;
-  loadUpload(async () => {
-    const single = entries.length === 1 && !entries[0].path.includes("/");
-    const rows = single
-      ? await Pluto.loadFile(entries[0].file)
-      : await Pluto.loadFolder(entries);
-    if (!rows) {
-      alert(
-        "That doesn't look like Pluto data — choose Pluto's results folder, or drop its summary.parquet."
-      );
-      return null;
-    }
-    if (!rows.length) {
-      alert("No usable rows found in that folder.");
-      return null;
-    }
-    return rows;
+  const single = entries.length === 1 && !entries[0].path.includes("/");
+  const request = single
+    ? { kind: "file", file: entries[0].file }
+    : { kind: "folder", entries };
+  if (single && !/\.parquet$/i.test(entries[0].file.name || "")) {
+    alert(
+      "That doesn't look like Pluto data — choose Pluto's results folder, or drop its summary.parquet."
+    );
+    return;
+  }
+  ingest(request, { upload: true }).catch(err => {
+    console.error("Could not load upload:", err);
+    updateSearchPlaceholder();
+    alert(err.message || "Could not load that data.");
   });
 };
 
@@ -1121,12 +1688,25 @@ window.addEventListener("drop", async e => {
 
 /* ------------------- Filter and sort ------------------- */
 
-const SORTS = {
-  date: (a, b) => a.firstMs - b.firstMs,
-  life: (a, b) => b.lastMs - b.firstMs - (a.lastMs - a.firstMs),
-  captures: (a, b) => b.captures - a.captures,
-  archive: (a, b) =>
-    a.archive.localeCompare(b.archive) || a.firstMs - b.firstMs,
+const SORT_KEYS = {
+  date: () => h => h.firstMs,
+  life: () => h => h.firstMs - h.lastMs,
+  captures: () => h => -h.captures,
+  archive: () => {
+    const rank = new Map(allArchives.map((name, i) => [name, i]));
+    return h => rank.get(h.archive) * 1e13 + h.firstMs;
+  },
+};
+
+const sortByKey = (items, key) => {
+  const keys = new Float64Array(items.length);
+  const order = new Uint32Array(items.length);
+  for (let i = 0; i < items.length; i++) {
+    keys[i] = key(items[i]);
+    order[i] = i;
+  }
+  order.sort((a, b) => keys[a] - keys[b] || a - b);
+  return Array.from(order, i => items[i]);
 };
 
 const inSelectedArchives = host => {
@@ -1135,25 +1715,44 @@ const inSelectedArchives = host => {
     : selectedArchives.has(host.archive);
 };
 
+const sortedCache = new Map();
+
+const sortedSource = () => {
+  const mode = SORT_KEYS[sortSelect.value] ? sortSelect.value : "date";
+  if (!sortedCache.has(mode)) {
+    const source = mode === "archive" ? hosts : mergedHosts;
+    sortedCache.set(mode, sortByKey(source, SORT_KEYS[mode]()));
+  }
+  return sortedCache.get(mode);
+};
+
 const computeVisible = () => {
   const query = searchInput.value.trim().toLowerCase();
-  const source = sortSelect.value === "archive" ? hosts : mergedHosts;
-  visible = source.filter(
-    h =>
-      selectedScopes.has(h.scope) &&
-      inSelectedArchives(h) &&
-      (!query || h.host.toLowerCase().includes(query))
+  const allScopes = SCOPES.every(
+    s => selectedScopes.has(s.id) || !scopeCounts.get(s.id)
   );
-  visible.sort(SORTS[sortSelect.value] || SORTS.date);
+  const allArchivesOn = selectedArchives.size === allArchives.length;
+  visible = sortedSource().filter(
+    h =>
+      (allScopes || selectedScopes.has(h.scope)) &&
+      (allArchivesOn || inSelectedArchives(h)) &&
+      (!query || h.key.includes(query))
+  );
 };
 
 const refresh = () => {
+  if (playingIntro) stopIntro();
+  hideHover();
   computeVisible();
-  searchInput.placeholder = `Search (${visible.length.toLocaleString()} URLs)`;
+  updateSearchPlaceholder();
   renderActiveView();
 };
 
-searchInput.addEventListener("input", refresh);
+let searchTimer = null;
+searchInput.addEventListener("input", () => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(refresh, mergedHosts.length > 50000 ? 200 : 0);
+});
 
 /* ------------------- View switcher ------------------- */
 
@@ -1196,7 +1795,13 @@ const buildRowPlan = () => {
   const rows = [];
   const grouped = sortSelect.value === "archive";
   visible.forEach((host, i) => {
-    rows.push({ type: "host", host, h: rowHeight });
+    let row = host.row;
+    if (!row) {
+      row = { type: "host", host, h: 0, top: 0, bottom: 0, y: 0, dots: null };
+      host.row = row;
+    }
+    row.h = rowHeight;
+    rows.push(row);
     if (grouped && visible[i + 1]?.archive !== host.archive) {
       rows.push({ type: "band", label: host.archive, h: BAND_H });
     }
@@ -1250,12 +1855,15 @@ const viewSize = () => [
   Math.max(1, viewport.clientHeight - CHROME_H),
 ];
 
+const maxRowHeight = count =>
+  Math.max(MIN_ROW, Math.min(MAX_ROW, MAX_PLOT_H / Math.max(1, count)));
+
 const fitRowHeight = count => {
   const available = Math.max(
     0,
     viewport.clientHeight - CHROME_H - eraReserveHeight()
   );
-  return clamp(available / Math.max(1, count), MIN_ROW, MAX_ROW);
+  return clamp(available / Math.max(1, count), MIN_ROW, maxRowHeight(count));
 };
 
 const fitInitialScale = () => {
@@ -1352,6 +1960,7 @@ const sizeCanvases = () => {
 
 const layout = () => {
   if (playingIntro) return introRedraw();
+  if (pendingData) return replaceData(pendingData);
   const rows = buildRowPlan();
   const width = surfaceWidth();
   const height = Math.max(
@@ -1360,6 +1969,9 @@ const layout = () => {
   );
   currentRows = positionRows(rows, height);
   plotFullHeight = height;
+  denseView = rowsAreDense(currentRows)
+    ? { packed: packRows(currentRows), count: currentRows.length }
+    : null;
 
   surface.style.width = `${width}px`;
   plotWrap.style.height = `${height}px`;
@@ -1367,6 +1979,12 @@ const layout = () => {
   sizeCanvases();
   redraw();
   renderBandLabels();
+};
+
+const resizeSurface = () => {
+  surface.style.width = `${surfaceWidth()}px`;
+  sizeCanvases();
+  redraw();
 };
 
 const redraw = () => {
@@ -1473,19 +2091,180 @@ const drawPlot = (ticks, viewW, viewH, scrollLeft, scrollTop) => {
   const top = scrollTop - DRAW_BUFFER;
   const bottom = scrollTop + viewH + DRAW_BUFFER;
   const width = surfaceWidth();
+  const first = firstRowIndexAtOrBelow(currentRows, bottom);
   plotCtx.font = FONT_SM;
   plotCtx.lineCap = "round";
-  for (
-    let i = firstRowIndexAtOrBelow(currentRows, bottom);
-    i < currentRows.length;
-    i++
-  ) {
-    const row = currentRows[i];
-    if (row.bottom < top) break;
-    if (row.type === "band") drawBandRow(row, width);
-    else drawHostRow(row);
+  if (denseView) {
+    drawDenseRows(denseView, scrollLeft, scrollTop, viewW, viewH, width);
+  } else {
+    for (let i = first; i < currentRows.length; i++) {
+      const row = currentRows[i];
+      if (row.bottom < top) break;
+      if (row.type === "band") drawBandRow(row, width);
+      else drawHostRow(row);
+    }
   }
   plotCtx.restore();
+};
+
+let denseView = null;
+
+const packRows = rows => {
+  const n = rows.length;
+  const packed = {
+    rows,
+    first: new Float64Array(n),
+    last: new Float64Array(n),
+    y: new Float64Array(n),
+    weight: new Float32Array(n),
+    flags: new Uint8Array(n),
+  };
+  for (let i = 0; i < n; i++) {
+    const row = rows[i];
+    packed.y[i] = row.y;
+    if (row.type === "band") {
+      packed.flags[i] = 2;
+      continue;
+    }
+    const { host } = row;
+    packed.first[i] = host.firstMs;
+    packed.last[i] = host.lastMs;
+    packed.weight[i] = host.inkWeight;
+    packed.flags[i] = host.live ? 1 : 0;
+  }
+  return packed;
+};
+
+const rowsAreDense = rows => {
+  const row = rows.find(r => r.type === "host");
+  return !!row && row.h < DENSE_ROW_H;
+};
+
+const dense = {
+  canvas: document.createElement("canvas"),
+  ink: null,
+  live: null,
+  stack: null,
+  image: null,
+  pixels: null,
+};
+
+const inkWeightFor = captures => {
+  const density = Math.min(1, 0.25 + Math.log10(captures + 1) / 2);
+  return -Math.log(1 - density * 0.45);
+};
+
+const denseColour = (inkSum, liveSum) => {
+  const ia = inkSum > 1e-6 ? 1 - Math.exp(-inkSum) : 0;
+  const la = liveSum > 1e-6 ? 1 - Math.exp(-liveSum) : 0;
+  const under = ia * (1 - la);
+  const alpha = la + under;
+  if (alpha <= 0) return 0;
+  const mix = (l, i) => Math.round((l * la + i * under) / alpha);
+  const r = mix(LIVE_RGB[0], LAUREL_RGB[0]);
+  const g = mix(LIVE_RGB[1], LAUREL_RGB[1]);
+  const b = mix(LIVE_RGB[2], LAUREL_RGB[2]);
+  return ((Math.round(alpha * 255) << 24) | (b << 16) | (g << 8) | r) >>> 0;
+};
+
+const firstBelow = (ys, count, y) => {
+  let lo = 0;
+  let hi = count;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (ys[mid] <= y) hi = mid;
+    else lo = mid + 1;
+  }
+  return lo;
+};
+
+const drawDenseRows = (view, scrollLeft, scrollTop, viewW, viewH, width) => {
+  const w = Math.ceil(viewW);
+  const h = Math.ceil(viewH);
+  const stride = w + 1;
+  if (!dense.ink || dense.ink.length !== stride * h) {
+    dense.ink = new Float32Array(stride * h);
+    dense.live = new Float32Array(stride * h);
+    dense.stack = new Uint32Array(h);
+    dense.canvas.width = w;
+    dense.canvas.height = h;
+  } else {
+    dense.ink.fill(0);
+    dense.live.fill(0);
+    dense.stack.fill(0);
+  }
+  const { ink: inkAcc, live: liveAcc, stack } = dense;
+  const clipX = playingIntro && introClipX !== null ? introClipX : Infinity;
+  const tailEndX = Math.min(dateToX(collectedMs), clipX) - scrollLeft;
+  const liveWeight = -Math.log(1 - 0.4);
+  const bandRows = [];
+
+  const span = (acc, index, x0, x1, weight) => {
+    const a = Math.max(0, Math.min(w, Math.floor(x0)));
+    const b = Math.max(0, Math.min(w, Math.ceil(x1)));
+    if (b <= a) return;
+    acc[index + a] += weight;
+    acc[index + b] -= weight;
+  };
+
+  const { packed, count } = view;
+  const { first: firsts, last: lasts, y: ys, weight, flags } = packed;
+  const toX = ms => EDGE_PAD + ((ms - fullStart) / YEAR_MS) * pxPerYear;
+  const firstIndex = view.uniform
+    ? Math.max(0, Math.floor((view.bottom - scrollTop - h) / view.rowH) - 1)
+    : firstBelow(ys, count, scrollTop + h);
+
+  for (let i = firstIndex; i < count; i++) {
+    const y = view.uniform ? view.bottom - (i + 0.5) * view.rowH : ys[i];
+    if (y < scrollTop - 1) break;
+    if (flags[i] === 2) {
+      bandRows.push(packed.rows[i]);
+      continue;
+    }
+    const py = Math.floor(y - scrollTop);
+    if (py < 0 || py >= h) continue;
+    const startX = toX(firsts[i]) - scrollLeft;
+    const endX = Math.max(
+      startX + 1.5,
+      Math.min(toX(lasts[i]), clipX) - scrollLeft
+    );
+    const index = py * stride;
+    stack[py]++;
+    span(inkAcc, index, startX, endX, weight[i]);
+    if (liveExtended && flags[i] === 1 && collectedMs > lasts[i])
+      span(liveAcc, index, endX, tailEndX, liveWeight);
+  }
+
+  if (!dense.image || dense.image.width !== w || dense.image.height !== h) {
+    dense.image = new ImageData(w, h);
+    dense.pixels = new Uint32Array(dense.image.data.buffer);
+  }
+  const { image, pixels } = dense;
+  pixels.fill(0);
+  for (let y = 0; y < h; y++) {
+    if (!stack[y]) continue;
+    const scale = stack[y] > DENSE_STACK ? DENSE_STACK / stack[y] : 1;
+    let inkSum = 0;
+    let liveSum = 0;
+    let colour = 0;
+    const row = y * stride;
+    const out = y * w;
+    for (let x = 0; x < w; x++) {
+      const dInk = inkAcc[row + x];
+      const dLive = liveAcc[row + x];
+      if (dInk !== 0 || dLive !== 0) {
+        inkSum += dInk;
+        liveSum += dLive;
+        colour = denseColour(inkSum * scale, liveSum * scale);
+      }
+      if (colour) pixels[out + x] = colour;
+    }
+  }
+  dense.canvas.getContext("2d").putImageData(image, 0, 0);
+  plotCtx.imageSmoothingEnabled = false;
+  plotCtx.drawImage(dense.canvas, scrollLeft, scrollTop, w, h);
+  plotCtx.imageSmoothingEnabled = true;
+  for (const row of bandRows) drawBandRow(row, width);
 };
 
 const drawBandRow = (row, width) => {
@@ -1531,36 +2310,41 @@ const drawHostRow = row => {
   const density = Math.min(1, 0.25 + Math.log10(host.captures + 1) / 2);
 
   const lineW = Math.max(1, rowH - Math.max(0, (rowH - 8) * 0.6));
-  plotCtx.strokeStyle = ink(density * 0.45);
-  plotCtx.lineWidth = lineW;
-  plotCtx.beginPath();
-  plotCtx.moveTo(startX, y);
-  plotCtx.lineTo(endX, y);
-  plotCtx.stroke();
-
+  const r = lineW / 2;
   let tailX = endX;
   if (liveExtended && host.live && collectedMs > host.lastMs) {
     const fullTailX = dateToX(collectedMs);
-    tailX =
+    tailX = Math.max(
+      endX,
       playingIntro && introClipX !== null
         ? Math.min(fullTailX, introClipX)
-        : fullTailX;
-    const tailW = Math.max(1, lineW * 0.5);
-    const tailStartX = endX + (lineW + tailW) / 2;
-    if (tailX > tailStartX) {
-      plotCtx.strokeStyle = `rgba(${LIVE},0.4)`;
-      plotCtx.lineWidth = tailW;
-      plotCtx.beginPath();
-      plotCtx.moveTo(tailStartX, y);
-      plotCtx.lineTo(tailX, y);
-      plotCtx.stroke();
-    } else tailX = endX;
+        : fullTailX
+    );
+  }
+  const hasTail = tailX > endX;
+
+  plotCtx.fillStyle = ink(density * 0.45);
+  plotCtx.beginPath();
+  plotCtx.roundRect(
+    startX - r,
+    y - r,
+    (hasTail ? endX : endX + r) - (startX - r),
+    lineW,
+    hasTail ? [r, 0, 0, r] : r
+  );
+  plotCtx.fill();
+
+  if (hasTail) {
+    plotCtx.fillStyle = `rgba(${LIVE},0.4)`;
+    plotCtx.beginPath();
+    plotCtx.roundRect(endX, y - r, tailX + r - endX, lineW, [0, r, r, 0]);
+    plotCtx.fill();
   }
 
   row.dots = [];
   if (!playingIntro && pxPerYear >= DOT_ZOOM_MIN && rowH >= DOT_MIN_ROW_H) {
     let lastX = -Infinity;
-    for (const memento of host.mementos) {
+    for (const memento of mementosOf(host)) {
       const x = dateToX(memento.ms);
       if (x - lastX < DOT_MIN_GAP) continue;
       lastX = x;
@@ -1641,9 +2425,11 @@ const stopIntro = () => {
 
 const playIntro = () => {
   const id = ++introId;
-  const sweep = [...mergedHosts]
-    .sort((a, b) => a.firstMs - b.firstMs)
-    .map(host => ({ type: "host", host, h: 0 }));
+  const sweep = sortByKey(mergedHosts, host => host.firstMs).map(host => ({
+    type: "host",
+    host,
+    h: 0,
+  }));
   let progress = 0;
   let start = 0;
 
@@ -1658,18 +2444,34 @@ const playIntro = () => {
     return lo;
   };
 
+  let sweepPacked = null;
+
   const placeRows = () => {
     const introTime = fullStart + (fullEnd - fullStart) * progress;
-    const rows = sweep.slice(0, revealedCount(introTime));
-    const rowH = fitRowHeight(rows.length);
-    for (const row of rows) row.h = rowH;
+    const count = revealedCount(introTime);
+    const rowH = fitRowHeight(count);
     introClipX = dateToX(introTime);
     plotFullHeight = Math.max(
       viewport.clientHeight - CHROME_H,
-      rows.length * rowH + eraReserveHeight()
+      count * rowH + eraReserveHeight()
     );
-    currentRows = positionRows(rows, plotFullHeight);
     plotWrap.style.height = `${plotFullHeight}px`;
+    if (rowH < DENSE_ROW_H) {
+      sweepPacked ||= packRows(sweep);
+      currentRows = [];
+      denseView = {
+        packed: sweepPacked,
+        count,
+        uniform: true,
+        rowH,
+        bottom: plotFullHeight,
+      };
+      return;
+    }
+    const rows = sweep.slice(0, count);
+    for (const row of rows) row.h = rowH;
+    currentRows = positionRows(rows, plotFullHeight);
+    denseView = null;
   };
 
   const frame = now => {
@@ -1714,7 +2516,8 @@ const zoomTime = (factor, clientX) => {
   const anchor = offset + viewport.scrollLeft;
   const before = surfaceWidth();
   pxPerYear = clamp(pxPerYear * factor, MIN_PX_YEAR, MAX_PX_YEAR);
-  layout();
+  if (playingIntro) layout();
+  else resizeSurface();
   viewport.scrollLeft = anchor * (surfaceWidth() / before) - offset;
 };
 
@@ -1722,7 +2525,7 @@ const zoomRows = (factor, clientY) => {
   const offset = clientY - plotCanvas.getBoundingClientRect().top;
   const anchor = offset + viewport.scrollTop;
   const before = plotFullHeight;
-  rowHeight = clamp(rowHeight * factor, MIN_ROW, MAX_ROW);
+  rowHeight = clamp(rowHeight * factor, MIN_ROW, maxRowHeight(visible.length));
   layout();
   viewport.scrollTop = anchor * (plotFullHeight / before) - offset;
 };
@@ -1960,7 +2763,7 @@ const isViewerOpen = () => {
 
 const openViewer = (host, memento) => {
   viewerHost = host;
-  viewerMementos = host.mementos;
+  viewerMementos = mementosOf(host);
   viewerIndex = Math.max(0, viewerMementos.indexOf(memento));
   viewerEl.hidden = false;
   hideHover();
@@ -2002,8 +2805,8 @@ const showViewerCapture = async () => {
 
   const url = mementoURL(
     resolved,
-    memento.ts,
-    memento.url || viewerHost.host,
+    toWayback(memento.ms),
+    memento.url || viewerHost.url || viewerHost.host,
     "no_toolbar"
   );
   viewerExternal.href = url;
@@ -2042,10 +2845,14 @@ const buildArchiveFilter = () => {
 };
 
 const setAllArchives = checked => {
-  selectedArchives = new Set(checked ? allArchives : []);
+  selectArchives(checked ? allArchives : []);
+};
+
+const selectArchives = names => {
+  selectedArchives = new Set(names);
   for (const input of archivesList.querySelectorAll("input")) {
-    input.checked = checked;
-    input.closest(".item").classList.toggle("selected", checked);
+    input.checked = selectedArchives.has(input.value);
+    input.closest(".item").classList.toggle("selected", input.checked);
   }
   updateArchiveFilterLabel();
 };
@@ -2130,6 +2937,7 @@ const classifyScopes = rows => {
     const { hostname, path } = parsed[i];
     row.scope =
       path && path !== "/" ? "deep" : hasParent(hostname) ? "hosts" : "root";
+    if (row.parts) for (const part of row.parts) part.scope = row.scope;
   });
 };
 
@@ -2148,10 +2956,14 @@ const buildScopeFilter = () => {
 };
 
 const setAllScopes = () => {
-  selectedScopes = new Set(SCOPES.map(s => s.id));
+  selectScopes(SCOPES.map(s => s.id));
+};
+
+const selectScopes = ids => {
+  selectedScopes = new Set(ids);
   for (const input of scopesList.querySelectorAll("input:not(:disabled)")) {
-    input.checked = true;
-    input.closest(".item").classList.add("selected");
+    input.checked = selectedScopes.has(input.value);
+    input.closest(".item").classList.toggle("selected", input.checked);
   }
   updateScopeFilterLabel();
 };
@@ -2438,11 +3250,43 @@ const showChartPlacard = (pointer, title, rows) => {
   );
 };
 
+const chartCache = new Map();
+
+const cached = (name, compute) => {
+  const hit = chartCache.get(name);
+  if (hit && hit.source === visible && hit.live === liveExtended)
+    return hit.value;
+  const value = compute();
+  chartCache.set(name, { source: visible, live: liveExtended, value });
+  return value;
+};
+
 const eraCohorts = data => {
-  return TOP_ERAS.map(era => ({
-    era,
-    born: data.filter(h => h.firstMs >= era.startMs && h.firstMs < era.endMs),
-  })).filter(cohort => cohort.born.length);
+  const cohorts = TOP_ERAS.map(era => ({ era, born: [] }));
+  for (const host of data)
+    for (const cohort of cohorts)
+      if (host.firstMs >= cohort.era.startMs && host.firstMs < cohort.era.endMs)
+        cohort.born.push(host);
+  return cohorts.filter(cohort => cohort.born.length);
+};
+
+const prepareRetention = (cohort, nowMs) => {
+  cohort.elapsedMonths = (nowMs - cohort.era.startMs) / MONTH_MS;
+
+  const spans = cohort.born
+    .map(h => (h.live ? Infinity : h.lastMs - cohort.era.startMs))
+    .sort((a, b) => a - b);
+  cohort.retentionAt = months => {
+    const cutoff = months * MONTH_MS;
+    let lo = 0;
+    let hi = spans.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (spans[mid] < cutoff) lo = mid + 1;
+      else hi = mid;
+    }
+    return (spans.length - lo) / spans.length;
+  };
 };
 
 const eraAlpha = (i, count) => 0.35 + 0.65 * (i / Math.max(1, count - 1));
@@ -2451,29 +3295,15 @@ const renderRidgeline = () => {
   const { ctx, w, plot, pointer } = prepareChart(ridgelineCanvas, {
     left: 232,
   });
-  const cohorts = eraCohorts(visible);
+  const cohorts = cached("ridgeline", () => {
+    const cohorts = eraCohorts(visible);
+    const nowMs = Date.now();
+    for (const cohort of cohorts) prepareRetention(cohort, nowMs);
+    return cohorts;
+  });
   if (!cohorts.length) return drawEmpty(ctx);
 
-  const nowMs = Date.now();
-  for (const cohort of cohorts) {
-    cohort.elapsedMonths = (nowMs - cohort.era.startMs) / MONTH_MS;
-    const spans = cohort.born
-      .map(h => (h.live ? Infinity : h.lastMs - cohort.era.startMs))
-      .sort((a, b) => a - b);
-    cohort.retentionAt = months => {
-      const cutoff = months * MONTH_MS;
-      let lo = 0;
-      let hi = spans.length;
-      while (lo < hi) {
-        const mid = (lo + hi) >> 1;
-        if (spans[mid] < cutoff) lo = mid + 1;
-        else hi = mid;
-      }
-      return (spans.length - lo) / spans.length;
-    };
-  }
-
-  const maxMonths = Math.max(...cohorts.map(c => c.elapsedMonths));
+  const maxMonths = maxOf(cohorts.map(c => c.elapsedMonths));
   const xForMonth = months => plot.left + (months / maxMonths) * plot.width;
   const bandH = plot.height / cohorts.length;
   const hoverMonths = pointer
@@ -2578,12 +3408,15 @@ const renderGrowth = () => {
   )
     months.push(t);
 
-  const born = new Map();
-  const died = new Map();
-  for (const host of visible) {
-    bump(born, monthKey(host.firstMs));
-    if (!host.live) bump(died, monthKey(host.lastMs));
-  }
+  const { born, died } = cached("growth", () => {
+    const born = new Map();
+    const died = new Map();
+    for (const host of visible) {
+      bump(born, monthKey(host.firstMs));
+      if (!host.live) bump(died, monthKey(host.lastMs));
+    }
+    return { born, died };
+  });
   let maxVal = 1;
   for (const m of months)
     maxVal = Math.max(maxVal, born.get(m) || 0, died.get(m) || 0);
@@ -2701,17 +3534,19 @@ const survivalAt = (steps, t) => {
 
 const renderSurvival = () => {
   const { ctx, plot, pointer } = prepareChart(survivalCanvas);
-  const cohorts = eraCohorts(visible);
+  const cohorts = cached("survival", () => {
+    const cohorts = eraCohorts(visible);
+    for (const cohort of cohorts) {
+      const spans = cohort.born.map(h => ({
+        t: Math.max(0, (h.lastMs - cohort.era.startMs) / MONTH_MS),
+        died: !h.live,
+      }));
+      cohort.steps = kaplanMeier(spans);
+      cohort.maxT = maxOf(spans.map(s => s.t));
+    }
+    return cohorts;
+  });
   if (!cohorts.length) return drawEmpty(ctx);
-
-  for (const cohort of cohorts) {
-    const spans = cohort.born.map(h => ({
-      t: Math.max(0, (h.lastMs - cohort.era.startMs) / MONTH_MS),
-      died: !h.live,
-    }));
-    cohort.steps = kaplanMeier(spans);
-    cohort.maxT = Math.max(...spans.map(s => s.t));
-  }
 
   const maxMonths = Math.max(1, ...cohorts.map(c => c.maxT));
   const xForMonth = months => plot.left + (months / maxMonths) * plot.width;
@@ -2797,18 +3632,21 @@ const renderAgePyramid = () => {
   const { ctx, plot, pointer } = prepareChart(ageCanvas);
   if (!visible.length) return drawEmpty(ctx);
 
-  const nowMs = Date.now();
-  const live = new Map();
-  const dead = new Map();
-  let maxAge = 0;
-  for (const host of visible) {
-    const age = Math.max(
-      0,
-      Math.floor(((host.live ? nowMs : host.lastMs) - host.firstMs) / YEAR_MS)
-    );
-    maxAge = Math.max(maxAge, age);
-    bump(host.live ? live : dead, age);
-  }
+  const { live, dead, maxAge } = cached("agepyramid", () => {
+    const nowMs = Date.now();
+    const live = new Map();
+    const dead = new Map();
+    let maxAge = 0;
+    for (const host of visible) {
+      const age = Math.max(
+        0,
+        Math.floor(((host.live ? nowMs : host.lastMs) - host.firstMs) / YEAR_MS)
+      );
+      maxAge = Math.max(maxAge, age);
+      bump(host.live ? live : dead, age);
+    }
+    return { live, dead, maxAge };
+  });
 
   let maxCount = 1;
   for (const count of [...live.values(), ...dead.values()])
