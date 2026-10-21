@@ -879,6 +879,76 @@ canvas {
   fill: rgb(var(--live), .4)
 }
 
+.legend {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: .2em 0 .6em 0;
+  overflow: visible
+}
+
+.legend .grid {
+  stroke: rgb(var(--laurel), .12)
+}
+
+.legend .axis {
+  stroke: rgb(var(--laurel), .35)
+}
+
+.legend .tick {
+  fill: rgb(var(--laurel), .5);
+  font-size: 10px;
+  text-anchor: middle
+}
+
+.legend .line {
+  stroke: rgb(var(--laurel), .55);
+  stroke-width: 11;
+  stroke-linecap: round
+}
+
+.legend .line.faint {
+  stroke: rgb(var(--laurel), .22)
+}
+
+.legend .segment {
+  fill: rgb(var(--laurel), .45)
+}
+
+.legend .extend {
+  fill: rgb(var(--live), .4)
+}
+
+.legend .ring {
+  fill: var(--color-primary)
+}
+
+.legend .point {
+  fill: var(--color-accent)
+}
+
+.legend .leader {
+  fill: none;
+  stroke: rgb(var(--laurel), .45)
+}
+
+.legend .label {
+  fill: rgb(var(--laurel), .85);
+  stroke: var(--color-primary);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+  paint-order: stroke;
+  font-size: 11px
+}
+
+.legend .label.middle {
+  text-anchor: middle
+}
+
+.legend .label.end {
+  text-anchor: end
+}
+
 /* ------------------- Report ------------------- */
 
 .empty {
@@ -948,6 +1018,11 @@ canvas {
   font-size: 12px;
   text-align: center;
   pointer-events: none
+}
+
+#viewer-status.loading {
+  cursor: wait;
+  pointer-events: auto
 }
 
 /* ------------------- Shortcuts ------------------- */
