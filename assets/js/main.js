@@ -1917,7 +1917,16 @@ const rowAt = y => {
 };
 
 const dotNear = (row, x) => {
-  return row?.dots?.find(dot => Math.abs(dot.x - x) <= DOT_HIT_RADIUS) ?? null;
+  let nearest = null;
+  for (const dot of row?.dots ?? []) {
+    const distance = Math.abs(dot.x - x);
+    if (
+      distance <= DOT_HIT_RADIUS &&
+      (!nearest || distance <= nearest.distance)
+    )
+      nearest = { dot, distance };
+  }
+  return nearest?.dot ?? null;
 };
 
 /* ------------------- Scale ------------------- */
@@ -2426,6 +2435,7 @@ const drawHostRow = row => {
       lastX = x;
       row.dots.push({ x, y, memento });
     }
+    if (hasTail) row.dots.push({ x: tailX, y, live: true });
     fillDots(row.dots, DOT_RADIUS + 1, `rgb(${SEAWEED})`);
     fillDots(row.dots, DOT_RADIUS, ink(1));
   }
@@ -2711,7 +2721,8 @@ viewport.addEventListener("mousemove", e => {
     return;
   }
 
-  showCapturePlacard(row.host, dot.memento, e.clientX, e.clientY);
+  if (dot.live) showLivePlacard(row.host, e.clientX, e.clientY);
+  else showCapturePlacard(row.host, dot.memento, e.clientX, e.clientY);
   const rect = plotCanvas.getBoundingClientRect();
   dotHighlight.style.left = `${rect.left + dot.x - viewport.scrollLeft}px`;
   dotHighlight.style.top = `${rect.top + dot.y - viewport.scrollTop}px`;
@@ -2726,7 +2737,7 @@ viewport.addEventListener("click", e => {
   const { x, y } = plotPoint(e);
   const row = rowAt(y);
   const dot = dotNear(row, x);
-  if (dot) openViewer(row.host, dot.memento);
+  if (dot) openViewer(row.host, dot.live ? null : dot.memento);
 });
 
 /* ------------------- Keyboard ------------------- */
@@ -2835,6 +2846,19 @@ const showCapturePlacard = (host, memento, clientX, clientY) => {
   );
 };
 
+const showLivePlacard = (host, clientX, clientY) => {
+  showPlacard(
+    `<div class="head">
+      <span class="host">${esc(host.host)}</span>
+      <span class="status live">Live</span>
+    </div>
+    <div class="facts">${fact("Live at", prettyDate(collectedMs))}</div>
+    <div class="hint">Click to open the live site →</div>`,
+    clientX,
+    clientY
+  );
+};
+
 /* ------------------- Capture viewer ------------------- */
 
 const isViewerOpen = () => {
@@ -2842,9 +2866,14 @@ const isViewerOpen = () => {
 };
 
 const openViewer = (host, memento) => {
+  const mementos = mementosOf(host);
   viewerHost = host;
-  viewerMementos = mementosOf(host);
-  viewerIndex = Math.max(0, viewerMementos.indexOf(memento));
+  viewerMementos = host.live
+    ? mementos.concat({ ms: collectedMs, live: true })
+    : mementos;
+  viewerIndex = memento
+    ? Math.max(0, viewerMementos.indexOf(memento))
+    : viewerMementos.length - 1;
   viewerEl.hidden = false;
   hideHover();
   showViewerCapture();
@@ -2852,6 +2881,7 @@ const openViewer = (host, memento) => {
 
 const closeViewer = () => {
   viewerEl.hidden = true;
+  viewerStatus.classList.remove("loading");
   viewerFrame.src = "about:blank";
   viewerHost = null;
   viewerMementos = [];
@@ -2871,14 +2901,27 @@ const showViewerCapture = async () => {
   const requestId = ++viewerRequestId;
 
   viewerHostEl.textContent = viewerHost.host;
-  viewerArchiveEl.textContent = memento.archive;
-  viewerDateEl.textContent = prettyDateTime(memento.ms);
+  viewerArchiveEl.textContent = memento.live ? "Live web" : memento.archive;
+  viewerDateEl.textContent = memento.live
+    ? `Live at ${prettyDate(memento.ms)}`
+    : prettyDateTime(memento.ms);
   viewerCountEl.textContent = `${viewerIndex + 1} / ${viewerMementos.length}`;
   viewerPrevBtn.disabled = viewerIndex === 0;
   viewerNextBtn.disabled = viewerIndex === viewerMementos.length - 1;
   viewerStatus.textContent = "Loading…";
+  viewerStatus.classList.add("loading");
   viewerStatus.hidden = false;
   viewerExternal.removeAttribute("href");
+
+  if (memento.live) {
+    const url = targetURL(viewerHost.url || viewerHost.host).replace(
+      /^http:\/\//i,
+      "https://"
+    );
+    viewerExternal.href = url;
+    viewerFrame.src = url;
+    return;
+  }
 
   const resolved = await resolveReplay(memento.archiveId, memento.archive);
   if (requestId !== viewerRequestId) return;
@@ -2891,6 +2934,7 @@ const showViewerCapture = async () => {
   );
   viewerExternal.href = url;
   if (resolved && !resolved.replay.no_toolbar) {
+    viewerStatus.classList.remove("loading");
     viewerStatus.textContent = `${memento.archive} doesn't offer a toolbar-free view, so it can't be shown here. Use “Open in new tab ↗” instead.`;
     return;
   }
@@ -2899,6 +2943,7 @@ const showViewerCapture = async () => {
 
 viewerFrame.addEventListener("load", () => {
   viewerStatus.hidden = true;
+  viewerStatus.classList.remove("loading");
 });
 viewerPrevBtn.addEventListener("click", () => stepViewer(-1));
 viewerNextBtn.addEventListener("click", () => stepViewer(1));
