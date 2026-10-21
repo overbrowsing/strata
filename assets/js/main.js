@@ -2715,7 +2715,8 @@ viewport.addEventListener("mousemove", e => {
   const rect = plotCanvas.getBoundingClientRect();
   dotHighlight.style.left = `${rect.left + dot.x - viewport.scrollLeft}px`;
   dotHighlight.style.top = `${rect.top + dot.y - viewport.scrollTop}px`;
-  dotHighlight.style.display = "block";
+  if (dotHighlight.style.display !== "block")
+    dotHighlight.style.display = "block";
 });
 
 viewport.addEventListener("mouseleave", hideHover);
