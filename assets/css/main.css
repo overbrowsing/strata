@@ -717,18 +717,13 @@ canvas {
 
 .overlay {
   z-index: 70;
-  align-items: flex-start;
-  padding: 96px 32px;
+  padding: 48px 32px;
   opacity: 0;
   transition: opacity .3s cubic-bezier(.645, .045, .355, 1)
 }
 
 .overlay.visible {
   opacity: 1
-}
-
-#about {
-  align-items: center
 }
 
 .overlay > .panel,
@@ -740,7 +735,7 @@ canvas {
 }
 
 .overlay > .panel {
-  width: 720px;
+  width: 840px;
   transform: translateY(8px);
   transition: transform .3s cubic-bezier(.645, .045, .355, 1)
 }
@@ -883,12 +878,8 @@ canvas {
   display: block;
   width: 100%;
   height: auto;
-  margin: .2em 0 .6em 0;
+  margin: .4em 0 0 0;
   overflow: visible
-}
-
-.legend .grid {
-  stroke: rgb(var(--laurel), .12)
 }
 
 .legend .axis {
@@ -899,16 +890,6 @@ canvas {
   fill: rgb(var(--laurel), .5);
   font-size: 10px;
   text-anchor: middle
-}
-
-.legend .line {
-  stroke: rgb(var(--laurel), .55);
-  stroke-width: 11;
-  stroke-linecap: round
-}
-
-.legend .line.faint {
-  stroke: rgb(var(--laurel), .22)
 }
 
 .legend .segment {
@@ -927,26 +908,28 @@ canvas {
   fill: var(--color-accent)
 }
 
-.legend .leader {
-  fill: none;
-  stroke: rgb(var(--laurel), .45)
+.legend [data-tip] {
+  cursor: help;
+  transition: fill .2s cubic-bezier(.645, .045, .355, 1)
 }
 
-.legend .label {
-  fill: rgb(var(--laurel), .85);
-  stroke: var(--color-primary);
-  stroke-width: 5px;
-  stroke-linejoin: round;
-  paint-order: stroke;
-  font-size: 11px
+.legend .segment:hover {
+  fill: rgb(var(--laurel), .7)
 }
 
-.legend .label.middle {
-  text-anchor: middle
+.legend .extend:hover {
+  fill: rgb(var(--live), .7)
 }
 
-.legend .label.end {
-  text-anchor: end
+.legend g[data-tip]:hover .ring {
+  stroke: var(--color-accent);
+  stroke-width: 1.5
+}
+
+.legend-tip {
+  min-height: 1.5em;
+  margin: .6em 0 0 0 !important;
+  color: var(--color-accent)
 }
 
 /* ------------------- Report ------------------- */
