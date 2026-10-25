@@ -3944,6 +3944,17 @@ const bindOverlay = (overlay, trigger, closeBtn, beforeOpen) => {
 bindOverlay(aboutOverlay, aboutTrigger, aboutClose);
 bindOverlay(reportOverlay, reportTrigger, reportClose, renderReport);
 
+const legendTip = $("legend-tip");
+const legendDefault = legendTip.textContent;
+for (const part of document.querySelectorAll(".legend [data-tip]")) {
+  part.addEventListener("mouseenter", () => {
+    legendTip.textContent = part.dataset.tip;
+  });
+  part.addEventListener("mouseleave", () => {
+    legendTip.textContent = legendDefault;
+  });
+}
+
 /* ------------------- Exhibition mode ------------------- */
 
 const toggleExhibition = async () => {
